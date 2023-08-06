@@ -1,0 +1,60 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --dark-gray: #1e1e1e;
+  --gray: #2d2d2d;
+  --light-gray: #313232;
+  --ui-font: "Noto Sans";
+  --ui-font-mono: "Fira Code", "Cascadia Code", monospace;
+
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+body {
+  display: flex;
+  font-family: var(--ui-font);
+  font-size: 13px;
+  /* background-color: var(--dark-gray); */
+  transition: color 0.5s, background-color 0.5s;
+  font-display: block;
+}
+
+/* Not sure if I want these selection colors everywhere */
+/* ::selection {
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.05);
+} */
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/*
+ * Scrollbar
+ */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(240, 240, 240, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(240, 240, 240, 0.2);
+}
