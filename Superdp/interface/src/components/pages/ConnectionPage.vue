@@ -1,7 +1,6 @@
 <script setup>
 import { computed, reactive, ref } from "vue";
 import { Tab } from "../../classes/Tab.js";
-import { getRelativeTime } from "../../utils";
 import { UseTimeAgo } from "@vueuse/components";
 import InputBox from "../InputBox.vue";
 const props = defineProps({

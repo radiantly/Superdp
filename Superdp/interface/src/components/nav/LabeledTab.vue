@@ -4,7 +4,6 @@ import NavBarItem from "./NavBarItem.vue";
 const props = defineProps({
   label: String,
   active: Boolean,
-  index: Number,
 });
 </script>
 
@@ -12,10 +11,10 @@ const props = defineProps({
   <NavBarItem
     class="labeled-tab"
     :class="{ active: props.active }"
-    @mousedown.stop="(e) => e.button == 0 && $emit('tabClick', props.index)"
+    @mousedown.stop="(e) => e.button == 0 && $emit('tabClick')"
   >
     <div class="text">{{ props.label }}</div>
-    <div class="close" @click.stop="$emit('tabClose', props.index)">
+    <div class="close" @click.stop="$emit('tabClose')">
       <IconCross />
     </div>
   </NavBarItem>

@@ -41,6 +41,7 @@ namespace Superdp
         private HeroForm owningForm;
         private bool shouldBeVisible = false;
         private bool flagConnectAfterDisconnect = false;
+        private bool flagDisconnectInProgress = false;
         readonly private string clientId;
         readonly private AxMSTSCLib.AxMsRdpClient11NotSafeForScripting rdp;
         private RDPConnectionParams want = new(), have = new();
@@ -88,6 +89,13 @@ namespace Superdp
             RequestConnect();
         }
 
+        public void Disconnect()
+        {
+            if (ConnectionState == RDPConnectionState.DISCONNECTED) return;
+            flagDisconnectInProgress = true;
+            rdp.Disconnect();
+        }
+
         private void RequestConnect()
         {
             if (ConnectionState != RDPConnectionState.DISCONNECTED)
@@ -98,9 +106,11 @@ namespace Superdp
                     return;
                 }
 
+                if (flagDisconnectInProgress) flagConnectAfterDisconnect = true;
                 if (flagConnectAfterDisconnect) return;
 
                 Log("Disconnecting existing session");
+                flagDisconnectInProgress = true;
                 flagConnectAfterDisconnect = true;
                 rdp.Disconnect();
 
@@ -195,6 +205,7 @@ namespace Superdp
             Visible = false;
             owningForm.Invalidate();
             Log($"Disconnected({e.discReason}): {rdp.GetErrorDescription((uint)e.discReason, (uint)rdp.ExtendedDisconnectReason)}", "disconnect");
+            if (flagDisconnectInProgress) flagDisconnectInProgress = false;
             if (flagConnectAfterDisconnect)
             {
                 flagConnectAfterDisconnect = false;

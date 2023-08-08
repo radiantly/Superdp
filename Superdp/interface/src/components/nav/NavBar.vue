@@ -11,6 +11,7 @@ import {
   webViewInBackground,
   interopQueen,
 } from "../../globals";
+import { useContextMenu } from "../contextmenu/ContextMenuHelper";
 
 /** @type {TabManager} */
 const tabManager = inject(tabManagerKey);
@@ -28,6 +29,29 @@ const handleMouseEnter = (e) => {
   webViewInBackground.value = false;
   overlayVisible.value = true;
 };
+
+const handleTabClose = (...tabs) => {
+  for (const tab of tabs) {
+    tabManager.remove(tab);
+    tab.disconnect();
+  }
+};
+
+const menu = useContextMenu();
+const handleContextMenu = (e, tab) => {
+  const menuItems = [
+    {
+      label: "Close",
+      handler: () => handleTabClose(tab),
+    },
+    {
+      label: "Close all tabs",
+      handler: () => handleTabClose(...tabManager.tabs),
+    },
+  ];
+
+  menu.show(e, menuItems);
+};
 </script>
 
 <template>
@@ -41,13 +65,13 @@ const handleMouseEnter = (e) => {
         <Logo />
       </NavBarItem>
       <LabeledTab
-        v-for="(tab, index) of tabManager.tabs"
+        v-for="tab of tabManager.tabs"
         :key="tab.client.id"
         :label="tab.client.label.value"
         :active="tab.isActive.value"
-        :index="index"
-        @tabClick="(idx) => tabManager.setActive(tab)"
-        @tabClose="(idx) => tabManager.remove(tab)"
+        @tabClick="() => tabManager.setActive(tab)"
+        @tabClose="() => handleTabClose(tab)"
+        @contextmenu.prevent="(e) => handleContextMenu(e, tab)"
       />
       <NewTab
         v-show="tabManager.tabs.length > 0"

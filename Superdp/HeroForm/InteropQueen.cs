@@ -60,6 +60,11 @@ namespace Superdp
                 RDPFormManager.Connect(form, clientId, host, username, password);
             }
 
+            public void RDPDisconnect(string clientId)
+            {
+                RDPFormManager.Disconnect(form, clientId);
+            }
+
             public void RDPSetVisibility(string clientId, bool visibility)
             {
                 Debug.WriteLine("Wanna set to " + visibility);

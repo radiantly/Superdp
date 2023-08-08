@@ -18,9 +18,9 @@ export class Tab {
     this.logs = shallowReactive([]);
 
     // Set rdp control visibility based on whether tab is active
-    watch(this.isActive, (isActive, oldActiveState) => {
+    watch(this.isActive, (isActive) => {
       if (!this.props.ownsRDPControl) return;
-      console.log("Computed watcher for tab", this, isActive, oldActiveState);
+      console.debug("Active tab watcher fire", this);
       if (isActive) this.#setRDPSize(this.props.parent.props.workAreaSize);
       this.#setRDPVisibility(isActive);
     });
@@ -59,6 +59,11 @@ export class Tab {
       this.client.props.username,
       this.client.props.password
     );
+  }
+
+  async disconnect() {
+    if (!this.ownsRDPControl) return;
+    await interopQueen.RDPDisconnect(this.id);
   }
 
   log(text) {

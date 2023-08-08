@@ -30,6 +30,13 @@ namespace Superdp
             rdpForm.Connect(host, username, password);
         }
 
+        public static void Disconnect(HeroForm form, string clientId)
+        {
+            var rdpForm = Get(form, clientId);
+            Debug.Assert(form == rdpForm.OwningForm);
+            rdpForm.Disconnect();
+        }
+
         public static void SetVisibility(HeroForm form, string clientId, bool visible) => Get(form, clientId).ShouldBeVisible = visible;
         public static void SetSize(HeroForm form, string clientId, Size size) => Get(form, clientId).SetPositioning(new Point(0, 35), size);
     }
