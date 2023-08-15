@@ -8,6 +8,8 @@ export class TabManager {
     this.activeTab = shallowRef(null);
     this.props = shallowReactive({
       workAreaSize: {
+        x: 0,
+        y: 0,
         width: 0,
         height: 0,
       },
@@ -15,8 +17,8 @@ export class TabManager {
     });
   }
 
-  setSize({ width, height }) {
-    this.props.workAreaSize = { width, height };
+  setSize({ x, y, width, height }) {
+    this.props.workAreaSize = { x, y, width, height };
   }
 
   setActive(tab) {

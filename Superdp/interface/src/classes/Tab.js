@@ -3,56 +3,71 @@ import { watchDebounced } from "@vueuse/core";
 import { interopQueen } from "../globals";
 
 export class Tab {
-  constructor({ client }) {
+  constructor({ client, props = {}, serializedLogs = [] }) {
     this.client = client;
 
     this.isActive = computed(() => this.props.parent?.props.active === this);
     this.props = shallowReactive({
       rdpControlVisible: false,
-      parent: null,
       connectInProgress: false,
 
       // A tab from a different window could possibly own the rdp control
       ownsRDPControl: true,
+
+      ...props,
+      parent: null,
     });
-    this.logs = shallowReactive([]);
+
+    this.logs = shallowReactive(
+      serializedLogs.map(({ timestamp, content }) => ({
+        date: new Date(timestamp),
+        content,
+      }))
+    );
+
+    const watchHandler = () => {
+      if (!this.props.ownsRDPControl || !this.props.parent) return;
+      this.#setRDPControlCharacteristics();
+    };
 
     // Set rdp control visibility based on whether tab is active
-    watch(this.isActive, (isActive) => {
-      if (!this.props.ownsRDPControl) return;
-      console.debug("Active tab watcher fire", this);
-      if (isActive) this.#setRDPSize(this.props.parent.props.workAreaSize);
-      this.#setRDPVisibility(isActive);
-    });
+    watch(this.isActive, watchHandler);
 
     // rdp control resize
-    watchDebounced(
-      () => this.props.parent?.props.workAreaSize,
-      (size) => {
-        if (!this.isActive.value || !this.props.ownsRDPControl) return;
-        console.log("Size update", size);
-        this.#setRDPSize(size);
-      },
-      { debounce: 222, maxWait: 555 }
-    );
+    watchDebounced(() => this.props.parent?.props.workAreaSize, watchHandler, {
+      debounce: 222,
+      maxWait: 555,
+    });
   }
 
   get id() {
     return this.client.id;
   }
 
-  async #setRDPSize({ width, height }) {
-    await interopQueen.RDPSetSize(this.id, width, height);
+  get #serializedLogs() {
+    return this.logs.map((date, content) => ({ timestamp: +date, content }));
   }
 
-  async #setRDPVisibility(isVisible) {
-    await interopQueen.RDPSetVisibility(this.id, isVisible);
+  async #setRDPControlCharacteristics(
+    { x, y, width, height, shouldBeVisible } = {
+      ...this.props.parent?.props.workAreaSize,
+      shouldBeVisible: this.isActive.value,
+    }
+  ) {
+    await interopQueen.RDPSetCharacteristics(
+      this.id,
+      x,
+      y,
+      width,
+      height,
+      shouldBeVisible
+    );
   }
 
   async connect() {
     this.ownsRDPControl = true;
     this.props.connectInProgress = true;
-    await this.#setRDPSize(this.props.parent.props.workAreaSize);
+    this.#setRDPControlCharacteristics();
     await interopQueen.RDPConnect(
       this.id,
       this.client.props.host,
@@ -79,5 +94,25 @@ export class Tab {
   giveupOwnership() {
     this.props.ownsRDPControl = false;
     this.props.parent?.remove(this);
+  }
+
+  serialize() {
+    return {
+      client: this.client.serialize(),
+      logs: this.#serializedLogs,
+      props: {
+        rdpControlVisible: this.props.rdpControlVisible,
+        connectInProgress: this.props.connectInProgress,
+        ownsRDPControl: this.props.ownsRDPControl,
+      },
+    };
+  }
+
+  serializeMsg() {
+    return {
+      type: "TAB_ADD",
+      clientId: this.id,
+      tab: this.serialize(),
+    };
   }
 }

@@ -1,8 +1,8 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
-import { overlayVisible, webViewInBackground } from "../globals";
+import { overlayVisible, webViewInForeground } from "../globals";
 const handleClick = (e) => {
-  webViewInBackground.value = true;
+  webViewInForeground.value--;
   overlayVisible.value = false;
 };
 </script>

@@ -12,5 +12,6 @@
   align-items: center;
   position: relative;
   height: 35px;
+  min-width: 0;
 }
 </style>

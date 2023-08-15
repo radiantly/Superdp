@@ -1,19 +1,49 @@
 <script setup>
+import { inject } from "vue";
+import { Tab } from "../../classes/Tab";
+import { dragManager, interopQueen } from "../../globals";
+import { tabManagerKey } from "../../keys";
 import IconCross from "../icons/IconCross.vue";
 import NavBarItem from "./NavBarItem.vue";
 const props = defineProps({
-  label: String,
-  active: Boolean,
+  tab: {
+    type: Tab,
+    required: true,
+  },
 });
+
+const tabManager = inject(tabManagerKey);
+
+const handleMouseDown = (e) => {
+  if (e.button !== 0) return; // ignore if not primary mouse button
+  tabManager.setActive(props.tab);
+
+  // If this is the only tab, then drag entire window
+  if (tabManager.tabs.length === 1) {
+    interopQueen.MouseDownWindowDragWithTab(
+      JSON.stringify(props.tab.serializeMsg())
+    );
+    return;
+  }
+};
+
+const handleMouseLeave = (e) => {
+  // Start drag
+  if (dragManager.props.isDragging) return;
+  dragManager.start(e, (dragProps) => {
+    dragProps.tab = props.tab;
+  });
+};
 </script>
 
 <template>
   <NavBarItem
     class="labeled-tab"
-    :class="{ active: props.active }"
-    @mousedown.stop="(e) => e.button == 0 && $emit('tabClick')"
+    :class="{ active: tab.isActive.value }"
+    @mousedown.stop="handleMouseDown"
+    @mouseleave="handleMouseLeave"
   >
-    <div class="text">{{ props.label }}</div>
+    <div class="text">{{ tab.client.label.value }}</div>
     <div class="close" @click.stop="$emit('tabClose')">
       <IconCross />
     </div>
@@ -38,6 +68,10 @@ const props = defineProps({
 .labeled-tab .text {
   padding: 0 0 0 13px;
   white-space: nowrap;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* I don't like this much. Can we maybe have a circle connection indicator and
@@ -49,6 +83,7 @@ const props = defineProps({
   border-radius: 3px;
   background-color: inherit;
   opacity: 0;
+  flex-shrink: 0;
 }
 
 .labeled-tab .close > svg {

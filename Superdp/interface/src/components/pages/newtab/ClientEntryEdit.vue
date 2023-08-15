@@ -17,12 +17,6 @@ const client = computed(() => props.entry.client);
 const tabManager = inject(tabManagerKey);
 
 const handleConnect = () => {
-  // const message = {
-  //   type: "RDP_CONNECT",
-  //   client: client.value,
-  // };
-  // console.log(JSON.stringify(message));
-  // window.chrome.webview.postMessage(JSON.stringify(message));
   console.log(client);
   client.value.createOrSwitchToTab(tabManager);
 };

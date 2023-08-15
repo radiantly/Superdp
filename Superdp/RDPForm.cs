@@ -118,7 +118,7 @@ namespace Superdp
             }
 
 
-            Log(string.Format("Tring to connect to {0}{1}{2}", want.Host, want.Username == "" ? "" : $" as {want.Username}", want.Password == "" ? "" : $"/***"));
+            Log(string.Format("Trying to connect to {0}{1}{2}", want.Host, want.Username == "" ? "" : $" as {want.Username}", want.Password == "" ? "" : $"/***"));
 
             have = want;
 

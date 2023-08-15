@@ -1,22 +1,29 @@
 <script setup>
+import { vOnClickOutside } from "@vueuse/components";
+import { ContextMenu } from "../../classes/ContextMenu.js";
 const props = defineProps({
   menu: {
-    type: Object,
+    type: ContextMenu,
     required: true,
   },
 });
 
 const handleClick = (e, callback) => {
-  props.menu.visible = false;
+  props.menu.hide();
   if (callback) callback(e);
 };
 </script>
 
 <template>
-  <div v-show="menu.visible" class="menu">
+  <div
+    v-show="menu.props.visible"
+    class="menu"
+    v-on-click-outside="() => menu.hide()"
+  >
     <div
       @click="(e) => handleClick(e, handler)"
-      v-for="{ label, handler } in menu.items"
+      v-for="{ label, handler } in menu.props.items"
+      :key="label"
     >
       {{ label }}
     </div>
@@ -30,8 +37,8 @@ const handleClick = (e, callback) => {
   border: 1px solid #444;
   padding: 4px;
   border-radius: 4px;
-  top: v-bind("menu.pos.y + 'px'");
-  left: v-bind("menu.pos.x + 'px'");
+  top: v-bind("menu.props.pos.y + 'px'");
+  left: v-bind("menu.props.pos.x + 'px'");
   display: flex;
   flex-direction: column;
   color: #ccc;

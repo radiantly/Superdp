@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Remoting;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using AxMSTSCLib;
 
@@ -22,7 +25,17 @@ namespace Superdp
                 this.form = form;
             }
 
-            public long GetFormCreationTimestamp() => form.creationTime;
+            public long GetFormCreationTimestamp()
+            {
+                Task.Run(() =>
+                {
+                    form.flagWebViewReady = true;
+                    foreach (string message in form.pendingWebMessages)
+                        form.PostWebMessage(message);
+                    form.pendingWebMessages.Clear();
+                });
+                return form.creationTime;
+            }
 
             #region TitleBarActions
             // https://github.com/MicrosoftEdge/WebView2Feedback/issues/200
@@ -44,7 +57,21 @@ namespace Superdp
                 ReleaseCapture();
                 PostMessage(form.Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
             }
+
+            public void MouseDownWindowDragWithTab(string serializedTab)
+            {
+                ReleaseCapture();
+                PostMessage(form.Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+                form.dragSerializedTab = serializedTab;
+            }
             #endregion
+
+            public void CreateNewDraggedWindow(string serializedTab) {
+                var newForm = form.manager.CreateInstance();
+                newForm.Location = new Point(Cursor.Position.X - 50, Cursor.Position.Y - 50);
+                newForm.PostWebMessage(serializedTab);
+                newForm.interopQueen.MouseDownWindowDragWithTab(serializedTab);
+            }
 
             public void BroadcastMessageToOtherInstances(string message)
             {
@@ -65,16 +92,9 @@ namespace Superdp
                 RDPFormManager.Disconnect(form, clientId);
             }
 
-            public void RDPSetVisibility(string clientId, bool visibility)
+            public void RDPSetCharacteristics(string clientId, int x, int y, int width, int height, bool visibility)
             {
-                Debug.WriteLine("Wanna set to " + visibility);
-                RDPFormManager.SetVisibility(form, clientId, visibility);
-            }
-
-            public void RDPSetSize(string clientId, int width, int height)
-            {
-                Debug.WriteLine($"Setting size to {width} {height}");
-                RDPFormManager.SetSize(form, clientId, new Size(width, height));
+                RDPFormManager.SetCharacteristics(form, clientId, new Point(x, y), new Size(width, height), visibility);
             }
 
             public void BringWebViewToFront()

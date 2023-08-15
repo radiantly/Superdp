@@ -2,16 +2,14 @@
 import TreeView from "./TreeView.vue";
 import { inject, computed, provide } from "vue";
 import { focusedItemIdSidebarKey } from "../../../keys";
-import { useContextMenu } from "../../contextmenu/ContextMenuHelper";
-import { clientManager, dragManager } from "../../../globals";
+import { clientManager, contextMenu, dragManager } from "../../../globals";
 import { DirEntry } from "../../../classes/DirEntry";
 import { Entry } from "../../../classes/Entry";
 
-const menu = useContextMenu();
 const focusedEntry = inject(focusedItemIdSidebarKey);
 
 const handleContextMenu = (e) => {
-  menu.show(e, [
+  contextMenu.show(e, [
     {
       label: "New connection...",
       handler: () => (focusedEntry.value = clientManager.createClient().entry),

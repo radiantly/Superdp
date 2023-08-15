@@ -24,9 +24,9 @@ provide(tabManagerKey, tabManager);
 const workAreaElem = ref(null);
 let observer;
 onMounted(() => {
-  observer = new ResizeObserver((entries) =>
-    tabManager.setSize(entries.at(-1).contentRect)
-  );
+  observer = new ResizeObserver(() => {
+    tabManager.setSize(workAreaElem.value.getBoundingClientRect());
+  });
   observer.observe(workAreaElem.value);
 });
 onBeforeUnmount(() => {

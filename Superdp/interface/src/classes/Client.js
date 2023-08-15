@@ -1,4 +1,4 @@
-import { shallowReactive, computed } from "vue";
+import { shallowReactive, computed, nextTick } from "vue";
 import { watchIgnorable } from "@vueuse/core";
 import { v4 as uuidv4 } from "uuid";
 import { Tab } from "./Tab";
@@ -36,11 +36,12 @@ export class Client {
   }
 
   // Creates tab if it doesn't exist. Otherwise switches to tab
-  createOrSwitchToTab(tabManager) {
+  async createOrSwitchToTab(tabManager) {
     if (!this.tab) this.tab = new Tab({ client: this });
     tabManager.add(this.tab);
     tabManager.setActive(this.tab);
 
+    await nextTick();
     this.tab.connect();
     return this.tab;
   }

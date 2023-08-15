@@ -37,7 +37,11 @@ namespace Superdp
             rdpForm.Disconnect();
         }
 
-        public static void SetVisibility(HeroForm form, string clientId, bool visible) => Get(form, clientId).ShouldBeVisible = visible;
-        public static void SetSize(HeroForm form, string clientId, Size size) => Get(form, clientId).SetPositioning(new Point(0, 35), size);
+        public static void SetCharacteristics(HeroForm form, string clientId, Point location, Size size, bool visible)
+        {
+            var rdpForm = Get(form, clientId);
+            rdpForm.SetPositioning(location, size);
+            rdpForm.ShouldBeVisible = visible;
+        }
     }
 }

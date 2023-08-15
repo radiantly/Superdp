@@ -1,12 +1,11 @@
 <script setup>
-import { inject, ref, onMounted, computed } from "vue";
+import { inject } from "vue";
 import IconCircle from "../../icons/IconCircle.vue";
 import IconSortDown from "../../icons/IconSortDown.vue";
 import { Entry } from "../../../classes/Entry.js";
 import { DirEntry } from "../../../classes/DirEntry.js";
 import { focusedItemIdSidebarKey, tabManagerKey } from "../../../keys";
-import { clientManager, dragManager } from "../../../globals";
-import { useContextMenu } from "../../contextmenu/ContextMenuHelper";
+import { clientManager, contextMenu, dragManager } from "../../../globals";
 const props = defineProps({
   entry: {
     type: Entry,
@@ -39,7 +38,7 @@ const handleMouseLeave = (e) => {
   // Start drag
   if (dragManager.props.isDragging) return;
   dragManager.start(e, (dragProps) => {
-    dragManager.props.entry = props.entry;
+    dragProps.entry = props.entry;
     if (props.entry.isDir() && !props.entry.props.collapsed) {
       props.entry.toggleCollapse();
       dragProps.undoCollapse = true;
@@ -65,7 +64,6 @@ const handleDrop = (e) => {
   console.log(props.entry, e);
 };
 
-const menu = useContextMenu();
 const tabManager = inject(tabManagerKey);
 const handleContextMenu = (e) => {
   const menuItems = {
@@ -109,7 +107,7 @@ const handleContextMenu = (e) => {
       },
     ],
   };
-  menu.show(e, menuItems[props.entry.type]);
+  contextMenu.show(e, menuItems[props.entry.type]);
 };
 </script>
 

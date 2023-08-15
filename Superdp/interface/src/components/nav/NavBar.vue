@@ -4,14 +4,14 @@ import Logo from "../icons/Logo.vue";
 import LabeledTab from "./LabeledTab.vue";
 import NewTab from "./NewTab.vue";
 import NavBarItem from "./NavBarItem.vue";
-import { ref, reactive, inject } from "vue";
+import { inject } from "vue";
 import { TabManager } from "../../classes/TabManager.js";
 import {
   overlayVisible,
-  webViewInBackground,
+  webViewInForeground,
   interopQueen,
+  contextMenu,
 } from "../../globals";
-import { useContextMenu } from "../contextmenu/ContextMenuHelper";
 
 /** @type {TabManager} */
 const tabManager = inject(tabManagerKey);
@@ -26,7 +26,7 @@ const handleMouseDown = (e) => {
 };
 
 const handleMouseEnter = (e) => {
-  webViewInBackground.value = false;
+  webViewInForeground.value++;
   overlayVisible.value = true;
 };
 
@@ -37,7 +37,6 @@ const handleTabClose = (...tabs) => {
   }
 };
 
-const menu = useContextMenu();
 const handleContextMenu = (e, tab) => {
   const menuItems = [
     {
@@ -50,7 +49,7 @@ const handleContextMenu = (e, tab) => {
     },
   ];
 
-  menu.show(e, menuItems);
+  contextMenu.show(e, menuItems);
 };
 </script>
 
@@ -67,9 +66,7 @@ const handleContextMenu = (e, tab) => {
       <LabeledTab
         v-for="tab of tabManager.tabs"
         :key="tab.client.id"
-        :label="tab.client.label.value"
-        :active="tab.isActive.value"
-        @tabClick="() => tabManager.setActive(tab)"
+        :tab="tab"
         @tabClose="() => handleTabClose(tab)"
         @contextmenu.prevent="(e) => handleContextMenu(e, tab)"
       />
@@ -103,5 +100,6 @@ const handleContextMenu = (e, tab) => {
   display: flex;
   flex-wrap: wrap;
   gap: 1px;
+  min-width: 0;
 }
 </style>

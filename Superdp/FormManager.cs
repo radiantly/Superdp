@@ -14,7 +14,7 @@ namespace Superdp
         readonly FileStream confStream;
         string confStr;
 
-        private readonly List<HeroForm> openForms = new();
+        public readonly List<HeroForm> openForms = new();
 
         private const int WM_APP = 0x8000;
         public const int newInstanceMesssage = WM_APP + 1;
@@ -60,11 +60,12 @@ namespace Superdp
             }
         }
 
-        public void CreateInstance()
+        public HeroForm CreateInstance()
         {
             var form = new HeroForm(this);
             openForms.Add(form);
             context.AddForm(form);
+            return form;
         }
 
         public string Conf

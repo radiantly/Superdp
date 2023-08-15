@@ -1,42 +1,31 @@
 import { shallowReactive } from "vue";
-import { ClientEntry } from "./ClientEntry";
-import { DirEntry } from "./DirEntry";
 
-class ContextMenu {
+export class ContextMenu {
   constructor() {
-    this.props = shallowReactive({});
+    this.props = shallowReactive({
+      visible: false,
+      items: [],
+      pos: {
+        x: 0,
+        y: 0,
+      },
+    });
   }
-
-  #getMenuItems(obj) {
-    if (obj instanceof ClientEntry) {
-      return [
-        {
-          label: "Delete",
-          handler: (obj) => obj.parent.removeChild(obj),
-        },
-      ];
-    }
-
-    if (obj instanceof DirEntry) {
-      return [
-        {
-          label: "New connection...",
-          handler: () =>
-            (focusedEntry.value = clientManager.createClient({
-              parentEntry: props.entry,
-            }).entry),
-        },
-        {
-          label: "New directory group...",
-          handler: () =>
-            (focusedEntry.value = new DirEntry({
-              manager: clientManager,
-              parentEntry: props.entry,
-            })),
-        },
-      ];
-    }
+  /**
+   * Show context menu
+   * @param {MouseEvent} event
+   * @param {{label: String}[]} items
+   */
+  show(event, items) {
+    event.preventDefault();
+    this.props.items = items;
+    this.props.visible = true;
+    this.props.pos = {
+      x: event.clientX,
+      y: event.clientY,
+    };
   }
-
-  show(e, obj) {}
+  hide() {
+    this.props.visible = false;
+  }
 }

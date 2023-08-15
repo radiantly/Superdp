@@ -6,24 +6,12 @@ import {
   useKeyedEventHandler,
   useWebMessages,
 } from "./composables";
-import { useContextMenu } from "./components/contextmenu/ContextMenuHelper";
 import ContextMenu from "./components/contextmenu/ContextMenu.vue";
-import { dragManager } from "./globals";
+import { contextMenu, dragManager, interopQueen } from "./globals";
 import Overlay from "./components/Overlay.vue";
+import { Tab } from "./classes/Tab";
 provideData();
 useWebMessages();
-
-// const clients = reactive({});
-
-// const tabs = reactive({
-//   NEW_TAB: {
-//     component: NewTabPage,
-//   },
-// });
-// tabs.active = tabs.NEW_TAB;
-// provide(tabsKey, tabs);
-
-const contextMenuHelper = useContextMenu({ provide: true });
 
 const handleMouseUp = (e) => {
   dragManager.clear();
@@ -31,6 +19,9 @@ const handleMouseUp = (e) => {
 
 const handleMouseLeave = (e) => {
   // TODO: Create new window if tab is dragged!
+  if (dragManager.props.tab instanceof Tab) {
+    interopQueen.CreateNewDraggedWindow("");
+  }
 
   dragManager.clear();
 };
@@ -45,13 +36,12 @@ const handler = useKeyedEventHandler(everythingKey);
     class="everything"
     @mouseup.passive="handleMouseUp"
     @mouseleave.passive="handleMouseLeave"
-    @mousedown="contextMenuHelper.hide"
     @mousemove="handler.handleEvent"
   >
     <WorkArea />
   </div>
   <Overlay />
-  <ContextMenu :menu="contextMenuHelper.menu" />
+  <ContextMenu :menu="contextMenu" />
 </template>
 
 <style scoped>
