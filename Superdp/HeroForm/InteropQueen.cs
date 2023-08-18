@@ -1,14 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Dynamic;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Runtime.Remoting;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using AxMSTSCLib;
 
 namespace Superdp
 {
@@ -27,13 +18,7 @@ namespace Superdp
 
             public long GetFormCreationTimestamp()
             {
-                Task.Run(() =>
-                {
-                    form.flagWebViewReady = true;
-                    foreach (string message in form.pendingWebMessages)
-                        form.PostWebMessage(message);
-                    form.pendingWebMessages.Clear();
-                });
+                form.InterfaceReady = true;
                 return form.creationTime;
             }
 
@@ -45,7 +30,7 @@ namespace Superdp
 
             [return: MarshalAs(UnmanagedType.Bool)]
             [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-            static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+            private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
             [DllImport("user32.dll")]
             private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
@@ -66,7 +51,8 @@ namespace Superdp
             }
             #endregion
 
-            public void CreateNewDraggedWindow(string serializedTab) {
+            public void CreateNewDraggedWindow(string serializedTab)
+            {
                 var newForm = form.manager.CreateInstance();
                 newForm.Location = new Point(Cursor.Position.X - 50, Cursor.Position.Y - 50);
                 newForm.PostWebMessage(serializedTab);

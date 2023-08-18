@@ -1,10 +1,12 @@
 import { computed, shallowReactive, shallowRef, watch } from "vue";
 import { watchDebounced } from "@vueuse/core";
 import { interopQueen } from "../globals";
+import { Client } from "./Client";
 
 export class Tab {
   constructor({ client, props = {}, serializedLogs = [] }) {
     this.client = client;
+    console.assert(this.client instanceof Client);
 
     this.isActive = computed(() => this.props.parent?.props.active === this);
     this.props = shallowReactive({
@@ -45,7 +47,10 @@ export class Tab {
   }
 
   get #serializedLogs() {
-    return this.logs.map((date, content) => ({ timestamp: +date, content }));
+    return this.logs.map(({ date, content }) => ({
+      timestamp: +date,
+      content,
+    }));
   }
 
   async #setRDPControlCharacteristics(
@@ -111,7 +116,6 @@ export class Tab {
   serializeMsg() {
     return {
       type: "TAB_ADD",
-      clientId: this.id,
       tab: this.serialize(),
     };
   }

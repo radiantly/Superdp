@@ -3,6 +3,7 @@ import { ChangeManager } from "./ChangeManager";
 import { Client } from "./Client";
 import { DirEntry } from "./DirEntry";
 import { interopQueen } from "../globals";
+import { Tab } from "./Tab";
 
 export class ClientManager {
   #debouncedWriteConfig;
@@ -10,6 +11,7 @@ export class ClientManager {
     this.changes = new ChangeManager();
     this.idToClient = new Map();
     this.dirEntries = new Map();
+    this.tabManagers = new Set();
 
     // Populate clients
     this.reconcile(conf);
@@ -31,6 +33,20 @@ export class ClientManager {
     switch (data.type) {
       case "RECONCILE":
         this.reconcile(data.changes);
+        break;
+      case "TAB_ADD":
+        this.reconcile({ clients: [data.tab.client] });
+
+        // TODO: make this nicer
+        const tabManager = this.tabManagers.keys().next().value;
+        const client = this.get(data.tab.client.id);
+        const tab = new Tab({
+          client,
+          props: data.tab.props,
+          serializedLogs: data.tab.logs,
+        });
+        client.recreateExistingTab(tabManager, tab);
+        break;
     }
   }
 

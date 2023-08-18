@@ -1,23 +1,14 @@
 <script setup>
-import { useKeyedEventHandler } from "../composables";
+import { useKeyedEventHandler, useTabManager } from "../composables";
 import { tabManagerKey, workAreaKey } from "../keys";
-import {
-  computed,
-  inject,
-  onBeforeUnmount,
-  onMounted,
-  provide,
-  ref,
-  shallowReactive,
-} from "vue";
+import { onBeforeUnmount, onMounted, provide, ref } from "vue";
 import NewTabPage from "./pages/newtab/NewTabPage.vue";
 import NavBar from "./nav/NavBar.vue";
 import ConnectionPage from "./pages/ConnectionPage.vue";
-import { TabManager } from "../classes/TabManager.js";
 
 const handler = useKeyedEventHandler(workAreaKey);
 
-const tabManager = new TabManager();
+const tabManager = useTabManager();
 
 provide(tabManagerKey, tabManager);
 

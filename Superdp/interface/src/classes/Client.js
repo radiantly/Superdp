@@ -46,13 +46,26 @@ export class Client {
     return this.tab;
   }
 
+  async recreateExistingTab(tabManager, tab) {
+    // Sanity check: Client must not already be associated to a visible tab
+    console.assert((this.tab?.props.parent ?? null) === null);
+
+    console.assert(tab instanceof Tab);
+    this.tab = tab;
+
+    tabManager.add(this.tab);
+    tabManager.setActive(this.tab);
+
+    return this.tab;
+  }
+
   processMessage(msg) {
     switch (msg.type) {
       case "RDP_LOG":
-        this.tab.processRDPLog(msg);
+        this.tab?.processRDPLog(msg);
         break;
       case "RDP_NEWOWNER":
-        this.tab.giveupOwnership();
+        this.tab?.giveupOwnership();
         break;
     }
   }

@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Superdp
 {
@@ -40,9 +36,9 @@ namespace Superdp
                 if (handle != IntPtr.Zero)
                 {
                     SendMessage(handle, newInstanceMesssage, IntPtr.Zero, IntPtr.Zero);
-                    System.Environment.Exit(0);
+                    Environment.Exit(0);
                 }
-                System.Environment.Exit(1);
+                Environment.Exit(1);
             }
 
 
@@ -63,7 +59,10 @@ namespace Superdp
         public HeroForm CreateInstance()
         {
             var form = new HeroForm(this);
+
             openForms.Add(form);
+            form.FormClosed += (sender, e) => openForms.Remove(form);
+
             context.AddForm(form);
             return form;
         }

@@ -18,17 +18,17 @@ const handleMouseUp = (e) => {
 };
 
 const handleMouseLeave = (e) => {
-  // TODO: Create new window if tab is dragged!
+  // Create new window if tab is dragged
   if (dragManager.props.tab instanceof Tab) {
-    interopQueen.CreateNewDraggedWindow("");
+    const tab = dragManager.props.tab;
+    tab.props.parent.remove(tab);
+    interopQueen.CreateNewDraggedWindow(JSON.stringify(tab.serializeMsg()));
   }
 
   dragManager.clear();
 };
 
 const handler = useKeyedEventHandler(everythingKey);
-
-// TODO: Handle Resize
 </script>
 
 <template>

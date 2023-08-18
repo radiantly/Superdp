@@ -2,6 +2,7 @@ import { onBeforeUnmount, onMounted, provide, shallowReactive } from "vue";
 import { clientsKey, dragManagerKey, treeKey } from "./keys";
 
 import { clientManager, interopQueen } from "./globals";
+import { TabManager } from "./classes/TabManager";
 
 const allEventHandlers = new Map();
 
@@ -60,4 +61,13 @@ export const useWebMessages = () => {
   onBeforeUnmount(() =>
     chrome.webview.removeEventListener("message", messageHandler)
   );
+};
+
+export const useTabManager = (...args) => {
+  const tabManager = new TabManager(...args);
+
+  onMounted(() => clientManager.tabManagers.add(tabManager));
+  onBeforeUnmount(() => clientManager.tabManagers.delete(tabManager));
+
+  return tabManager;
 };
