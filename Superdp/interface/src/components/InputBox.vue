@@ -3,6 +3,10 @@ defineProps({
   label: {
     type: String,
   },
+  info: {
+    type: String,
+    default: "",
+  },
   modelValue: {},
 });
 defineOptions({
@@ -18,6 +22,7 @@ defineOptions({
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
     />
+    <div class="info-text">{{ info }}&nbsp;</div>
   </label>
 </template>
 
@@ -51,5 +56,10 @@ input {
 input:hover,
 input:focus {
   background-color: #383838;
+}
+
+.info-text {
+  color: #aaa;
+  font-size: 10px;
 }
 </style>

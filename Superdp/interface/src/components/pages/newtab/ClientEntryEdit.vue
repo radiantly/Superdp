@@ -25,23 +25,23 @@ const handleConnect = () => {
 <template>
   <form>
     <LargeInput v-model="client.props.name" placeholder="Untitled connection" />
-
-    <!-- Should these input elements be components? But they're rather unique -->
-    <!-- <label class="input-box">
-      <div class="label-text">Hostname</div>
-      <input v-model="client.props.host" placeholder="127.0.0.1" />
-    </label> -->
     <InputBox
       class="txt-input"
       label="Hostname"
       v-model="client.props.host"
       placeholder="127.0.0.1"
+      :info="/^[a-z0-9.-]*$/i.test(client.props.host) ? '' : 'Invalid hostname'"
     />
     <InputBox
       class="txt-input"
       label="Username"
       v-model="client.props.username"
       placeholder="admin"
+      :info="
+        client.props.username.includes('\\')
+          ? 'Domain: ' + client.props.username.split('\\')[0]
+          : ''
+      "
     />
     <InputBox
       class="txt-input"
@@ -58,7 +58,7 @@ const handleConnect = () => {
 form {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 15px;
   padding: 35px 50px;
 }
 

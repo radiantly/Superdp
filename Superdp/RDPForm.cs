@@ -118,7 +118,18 @@ namespace Superdp
 
             rdp.Server = want.Host;
             rdp.AdvancedSettings9.MaxReconnectAttempts = 1;
-            rdp.UserName = want.Username;
+
+            var split = want.Username.Split('\\', 2);
+            if (split.Length == 2)
+            {
+                rdp.Domain = split[0];
+                rdp.UserName = split[1];
+            }
+            else
+            {
+                rdp.UserName = want.Username;
+            }
+
             var Secured = (IMsTscNonScriptable)rdp.GetOcx();
             Secured.ClearTextPassword = want.Password;
             rdp.AdvancedSettings9.ClearTextPassword = want.Password;

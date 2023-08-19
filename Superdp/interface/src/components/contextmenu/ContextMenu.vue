@@ -43,6 +43,8 @@ const handleClick = (e, callback) => {
   flex-direction: column;
   color: #ccc;
   font-size: 13px;
+  z-index: 1337;
+  white-space: nowrap;
 }
 
 .menu > div {

@@ -41,7 +41,7 @@ provide("validDrop", validDrag);
 <style scoped>
 .tree {
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden auto;
   flex-grow: 1;
 }
 

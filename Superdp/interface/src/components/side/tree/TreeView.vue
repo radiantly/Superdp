@@ -21,10 +21,7 @@ const lineIndent = `${17 + props.depth * 20 - 14}px`;
 </script>
 
 <template>
-  <div
-    class="entries"
-    :class="{ root: !depth, collapsed: tree.props.collapsed }"
-  >
+  <div class="entries" :class="{ root: !depth }" v-show="!tree.props.collapsed">
     <template v-for="entry in tree.children.value" :key="entry.id">
       <ItemRow :entry="entry" :indent="indent" />
       <TreeView
@@ -44,10 +41,7 @@ const lineIndent = `${17 + props.depth * 20 - 14}px`;
   position: relative;
 }
 
-.entries.collapsed {
-  display: none;
-}
-
+/* This is the thin line that indicates an expanded dir */
 .entries::after {
   content: "";
   position: absolute;

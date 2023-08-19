@@ -163,6 +163,7 @@ const handleContextMenu = (e) => {
   user-select: none;
   margin-left: 3px;
   white-space: nowrap;
+  text-overflow: clip;
 }
 
 .icon {

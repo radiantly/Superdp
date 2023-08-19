@@ -1,26 +1,22 @@
 <script setup>
 import { useTabManager } from "../composables";
 import { tabManagerKey } from "../keys";
-import { onBeforeUnmount, onMounted, provide, ref } from "vue";
+import { provide, ref } from "vue";
 import NewTabPage from "./pages/newtab/NewTabPage.vue";
 import NavBar from "./nav/NavBar.vue";
 import ConnectionPage from "./pages/ConnectionPage.vue";
+import { useResizeObserver } from "@vueuse/core";
 
+// TODO: Refactor this. Currently, the view is creating the state. Needs to be
+// the other way around.
 const tabManager = useTabManager();
-
 provide(tabManagerKey, tabManager);
 
 const workAreaElem = ref(null);
-let observer;
-onMounted(() => {
-  observer = new ResizeObserver(() => {
-    tabManager.setSize(workAreaElem.value.getBoundingClientRect());
-  });
-  observer.observe(workAreaElem.value);
-});
-onBeforeUnmount(() => {
-  observer.disconnect();
-});
+
+useResizeObserver(workAreaElem, () =>
+  tabManager.setSize(workAreaElem.value.getBoundingClientRect())
+);
 </script>
 
 <template>

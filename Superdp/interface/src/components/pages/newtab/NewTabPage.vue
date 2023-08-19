@@ -1,5 +1,4 @@
 <script setup>
-import TreeManager from "../../side/tree/TreeManager.vue";
 import ResizableSidebar from "../../side/ResizableSidebar.vue";
 
 import { provide, shallowRef, computed, watchEffect } from "vue";
@@ -8,6 +7,7 @@ import ClientEntryEdit from "./ClientEntryEdit.vue";
 import { ClientEntry } from "../../../classes/ClientEntry";
 import DirEntryEdit from "./DirEntryEdit.vue";
 import { clientManager } from "../../../globals";
+import Connections from "../../side/Connections.vue";
 
 // if we don't use a shallowRef here, the assigned entry object is proxied
 // and no longer equal to the original
@@ -26,7 +26,7 @@ provide(focusedItemIdSidebarKey, focusedEntry);
 <template>
   <div class="page-container">
     <ResizableSidebar>
-      <TreeManager />
+      <Connections />
     </ResizableSidebar>
     <div style="flex-grow: 1">
       <DirEntryEdit :entry="focusedEntry" v-if="focusedEntry?.isDir()" />

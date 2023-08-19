@@ -1,9 +1,7 @@
 <script setup>
 import { tabManagerKey } from "../../keys";
-import Logo from "../icons/Logo.vue";
 import LabeledTab from "./LabeledTab.vue";
 import NewTab from "./NewTab.vue";
-import NavBarItem from "./NavBarItem.vue";
 import { inject } from "vue";
 import { TabManager } from "../../classes/TabManager.js";
 import {
@@ -12,6 +10,7 @@ import {
   interopQueen,
   contextMenu,
 } from "../../globals";
+import NavLogo from "./NavLogo.vue";
 
 /** @type {TabManager} */
 const tabManager = inject(tabManagerKey);
@@ -23,11 +22,6 @@ const handleMouseDown = (e) => {
   // TODO: Handle context menu
   // else if (e.button === 2)
   //   chrome.webview.hostObjects.sync.interopQueen.TitlebarRightClick();
-};
-
-const handleMouseEnter = (e) => {
-  webViewInForeground.value++;
-  overlayVisible.value = true;
 };
 
 const handleTabClose = (...tabs) => {
@@ -51,6 +45,12 @@ const handleContextMenu = (e, tab) => {
 
   contextMenu.show(e, menuItems);
 };
+
+const handleMouseEnter = (e) => {
+  if (tabManager.props.active === TabManager.NEW_TAB) return;
+  webViewInForeground.value++;
+  overlayVisible.value = true;
+};
 </script>
 
 <template>
@@ -60,9 +60,7 @@ const handleContextMenu = (e, tab) => {
     @contextmenu.prevent
   >
     <div class="tabs">
-      <NavBarItem class="logo" @mouseenter.passive="handleMouseEnter">
-        <Logo />
-      </NavBarItem>
+      <NavLogo @mouseenter.passive="handleMouseEnter" />
       <LabeledTab
         v-for="tab of tabManager.tabs"
         :key="tab.client.id"
@@ -81,19 +79,6 @@ const handleContextMenu = (e, tab) => {
 .nav {
   display: flex;
   background-color: #222;
-}
-
-.nav .logo {
-  align-self: stretch;
-  justify-content: center;
-  width: 40px;
-}
-
-.nav .logo svg {
-  object-fit: contain;
-  width: 18px;
-  height: 18px;
-  fill: #ddd;
 }
 
 .nav > .tabs {
