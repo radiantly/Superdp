@@ -1,13 +1,11 @@
 <script setup>
 import TreeManager from "../../side/tree/TreeManager.vue";
-import Sidebar from "../../side/Sidebar.vue";
-// import { measureText } from "../utils.js";
+import ResizableSidebar from "../../side/ResizableSidebar.vue";
 
 import { provide, shallowRef, computed, watchEffect } from "vue";
 import { focusedItemIdSidebarKey } from "../../../keys";
 import ClientEntryEdit from "./ClientEntryEdit.vue";
 import { ClientEntry } from "../../../classes/ClientEntry";
-import { DirEntry } from "../../../classes/DirEntry";
 import DirEntryEdit from "./DirEntryEdit.vue";
 import { clientManager } from "../../../globals";
 
@@ -27,9 +25,9 @@ provide(focusedItemIdSidebarKey, focusedEntry);
 
 <template>
   <div class="page-container">
-    <Sidebar>
+    <ResizableSidebar>
       <TreeManager />
-    </Sidebar>
+    </ResizableSidebar>
     <div style="flex-grow: 1">
       <DirEntryEdit :entry="focusedEntry" v-if="focusedEntry?.isDir()" />
       <ClientEntryEdit

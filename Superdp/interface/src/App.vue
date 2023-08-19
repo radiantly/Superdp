@@ -1,11 +1,6 @@
 <script setup>
 import WorkArea from "./components/WorkArea.vue";
-import { everythingKey } from "./keys";
-import {
-  provideData,
-  useKeyedEventHandler,
-  useWebMessages,
-} from "./composables";
+import { provideData, useWebMessages } from "./composables";
 import ContextMenu from "./components/contextmenu/ContextMenu.vue";
 import { contextMenu, dragManager, interopQueen } from "./globals";
 import Overlay from "./components/Overlay.vue";
@@ -27,8 +22,6 @@ const handleMouseLeave = (e) => {
 
   dragManager.clear();
 };
-
-const handler = useKeyedEventHandler(everythingKey);
 </script>
 
 <template>
@@ -36,7 +29,6 @@ const handler = useKeyedEventHandler(everythingKey);
     class="everything"
     @mouseup.passive="handleMouseUp"
     @mouseleave.passive="handleMouseLeave"
-    @mousemove="handler.handleEvent"
   >
     <WorkArea />
   </div>

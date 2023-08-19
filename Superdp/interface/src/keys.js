@@ -1,8 +1,3 @@
-// component keys
-export const everythingKey = Symbol();
-export const workAreaKey = Symbol();
-export const sidebarKey = Symbol();
-
 // provide keys
 export const clientsKey = Symbol();
 export const treeKey = Symbol();

@@ -1,12 +1,10 @@
 <script setup>
-import { useKeyedEventHandler, useTabManager } from "../composables";
-import { tabManagerKey, workAreaKey } from "../keys";
+import { useTabManager } from "../composables";
+import { tabManagerKey } from "../keys";
 import { onBeforeUnmount, onMounted, provide, ref } from "vue";
 import NewTabPage from "./pages/newtab/NewTabPage.vue";
 import NavBar from "./nav/NavBar.vue";
 import ConnectionPage from "./pages/ConnectionPage.vue";
-
-const handler = useKeyedEventHandler(workAreaKey);
 
 const tabManager = useTabManager();
 
@@ -27,13 +25,7 @@ onBeforeUnmount(() => {
 
 <template>
   <NavBar />
-  <div
-    ref="workAreaElem"
-    class="workArea"
-    @mousemove="handler.handleEvent"
-    @mouseup="handler.handleEvent"
-    @mouseleave="handler.handleEvent"
-  >
+  <div ref="workAreaElem" class="workArea">
     <template v-for="tab of tabManager.tabs" :key="tab.client.id">
       <ConnectionPage v-show="tab.isActive.value" :tab="tab" />
     </template>
