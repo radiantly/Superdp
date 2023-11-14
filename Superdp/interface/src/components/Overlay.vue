@@ -1,14 +1,18 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
 import { useWindowFocus } from "@vueuse/core";
-import { contextMenu, overlayVisible, webViewInForeground } from "../globals";
+import { contextMenu, overlayVisible } from "../globals";
 import NavLogo from "./nav/NavLogo.vue";
 import Connections from "./side/Connections.vue";
 import ResizableSideBar from "./side/ResizableSideBar.vue";
-import { watch } from "vue";
+import { shallowReactive, watch, watchEffect } from "vue";
+import ClientEditSide from "./side/ClientEditSide.vue";
+import { ClientEntry } from "../classes/ClientEntry";
+import { Entry } from "../classes/Entry";
+import { vOnClickOutside } from "@vueuse/components";
+import { computed } from "@vue/reactivity";
+
 const hide = () => {
-  // TODO: A race condition may be possible?
-  webViewInForeground.value--;
   overlayVisible.value = false;
   contextMenu.hide();
 };
@@ -16,14 +20,22 @@ const hide = () => {
 const focused = useWindowFocus();
 
 watch(focused, (isFocused) => !isFocused && hide());
+
+const connectionSideProps = shallowReactive({});
+const activeEntry = computed(
+  () => connectionSideProps.focusedEntry || connectionSideProps.hoveredEntry
+);
 </script>
 
 <template>
-  <div class="overlay" :class="{ visible: overlayVisible }" @click="hide">
+  <div class="overlay" :class="{ visible: overlayVisible }">
     <NavLogo class="overlay-logo" />
-    <div class="overlay-contents">
+    <div class="overlay-contents" v-on-click-outside="hide">
       <ResizableSideBar>
-        <Connections />
+        <Connections :side-props="connectionSideProps" />
+      </ResizableSideBar>
+      <ResizableSideBar v-if="activeEntry instanceof Entry">
+        <ClientEditSide :entry="activeEntry" />
       </ResizableSideBar>
     </div>
   </div>
@@ -57,5 +69,7 @@ watch(focused, (isFocused) => !isFocused && hide());
 .overlay-contents {
   display: flex;
   flex-grow: 1;
+  gap: 1px;
+  align-self: flex-start;
 }
 </style>

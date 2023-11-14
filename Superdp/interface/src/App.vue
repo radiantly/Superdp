@@ -1,12 +1,16 @@
 <script setup>
 import WorkArea from "./components/WorkArea.vue";
-import { provideData, useWebMessages } from "./composables";
+import { provideData } from "./composables";
 import ContextMenu from "./components/contextmenu/ContextMenu.vue";
-import { contextMenu, dragManager, interopQueen } from "./globals";
+import {
+  clientManager,
+  contextMenu,
+  dragManager,
+  interopQueen,
+} from "./globals";
 import Overlay from "./components/Overlay.vue";
 import { Tab } from "./classes/Tab";
 provideData();
-useWebMessages();
 
 const handleMouseUp = (e) => {
   dragManager.clear();
@@ -30,7 +34,7 @@ const handleMouseLeave = (e) => {
     @mouseup.passive="handleMouseUp"
     @mouseleave.passive="handleMouseLeave"
   >
-    <WorkArea />
+    <WorkArea :tab-manager="clientManager.session.children[0]" />
   </div>
   <Overlay />
   <ContextMenu :menu="contextMenu" />

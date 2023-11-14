@@ -3,53 +3,75 @@ import { computed, inject } from "vue";
 import { ClientEntry } from "../../../classes/ClientEntry";
 import { tabManagerKey } from "../../../keys";
 import LargeInput from "./LargeInput.vue";
-import InputBox from "../../InputBox.vue";
+import LabeledGroup from "../../LabeledGroup.vue";
+import TextInput from "../../TextInput.vue";
+import SelectInput from "../../SelectInput.vue";
+import { clientManager } from "../../../globals";
 
 const props = defineProps({
   entry: {
     type: ClientEntry,
     required: true,
   },
+  fullSize: {
+    type: Boolean,
+    required: true,
+  },
 });
 
 const client = computed(() => props.entry.client);
 
-const tabManager = inject(tabManagerKey);
+const tabManager = inject(tabManagerKey, clientManager.session.children[0]);
 
 const handleConnect = () => {
   console.log(client);
-  client.value.createOrSwitchToTab(tabManager);
+  client.value.createTab(tabManager);
 };
 </script>
 
 <template>
-  <form>
-    <LargeInput v-model="client.props.name" placeholder="Untitled connection" />
-    <InputBox
-      class="txt-input"
-      label="Hostname"
-      v-model="client.props.host"
-      placeholder="127.0.0.1"
-      :info="/^[a-z0-9.-]*$/i.test(client.props.host) ? '' : 'Invalid hostname'"
+  <form :class="{ 'full-size': fullSize }">
+    <LargeInput
+      v-if="fullSize"
+      v-model="client.props.name"
+      placeholder="Untitled connection"
     />
-    <InputBox
-      class="txt-input"
-      label="Username"
-      v-model="client.props.username"
-      placeholder="admin"
-      :info="
-        client.props.username.includes('\\')
-          ? 'Domain: ' + client.props.username.split('\\')[0]
-          : ''
-      "
-    />
-    <InputBox
-      class="txt-input"
-      label="Password"
-      v-model="client.props.password"
-      type="password"
-      placeholder="Le$$1sM0re"
-    />
+    <LabeledGroup label="Connection name" v-else>
+      <TextInput
+        class="txt-input"
+        v-model="client.props.name"
+        placeholder="Untitled connection"
+      />
+    </LabeledGroup>
+    <LabeledGroup label="Hostname" :hint="client.hints.host">
+      <TextInput
+        class="txt-input"
+        v-model="client.props.host"
+        placeholder="127.0.0.1"
+      />
+    </LabeledGroup>
+    <LabeledGroup label="Connection type">
+      <SelectInput
+        class="txt-input"
+        :options="['rdp', 'ssh']"
+        v-model="client.props.type"
+      />
+    </LabeledGroup>
+    <LabeledGroup label="Username" :hint="client.hints.username">
+      <TextInput
+        class="txt-input"
+        v-model="client.props.username"
+        placeholder="admin"
+      />
+    </LabeledGroup>
+    <LabeledGroup label="Password">
+      <TextInput
+        class="txt-input"
+        v-model="client.props.password"
+        type="password"
+        placeholder="Le$$1sM0re"
+      />
+    </LabeledGroup>
     <button class="submit" @click.prevent="handleConnect">Connect</button>
   </form>
 </template>
@@ -59,6 +81,10 @@ form {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  padding: 0 19px;
+}
+form.full-size {
+  gap: 30px;
   padding: 35px 50px;
 }
 

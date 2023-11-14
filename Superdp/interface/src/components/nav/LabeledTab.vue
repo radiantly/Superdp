@@ -12,6 +12,8 @@ const props = defineProps({
   },
 });
 
+defineEmits(["close"]);
+
 const tabManager = inject(tabManagerKey);
 
 const handleMouseDown = (e) => {
@@ -44,7 +46,7 @@ const handleMouseLeave = (e) => {
     @mouseleave="handleMouseLeave"
   >
     <div class="text">{{ tab.client.label.value }}</div>
-    <div class="close" @click.stop="$emit('tabClose')">
+    <div class="close" @mousedown.stop="$emit('close')">
       <IconCross />
     </div>
   </NavBarItem>

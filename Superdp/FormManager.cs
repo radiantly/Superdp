@@ -1,8 +1,8 @@
-﻿using System.Runtime.InteropServices;
-using System.Text;
+﻿using System.Text;
 
 namespace Superdp
 {
+    using static Native;
     public class FormManager
     {
         static readonly string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Superdp");
@@ -12,16 +12,9 @@ namespace Superdp
 
         public readonly List<HeroForm> openForms = new();
 
-        private const int WM_APP = 0x8000;
         public const int newInstanceMesssage = WM_APP + 1;
 
         public readonly MultiFormContext context;
-
-        [DllImport("user32.dll", EntryPoint = "FindWindow", SetLastError = true)]
-        static extern IntPtr FindWindowByCaption(IntPtr ZeroOnly, string lpWindowName);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
 
         public FormManager()
         {
@@ -35,10 +28,12 @@ namespace Superdp
                 var handle = FindWindowByCaption(IntPtr.Zero, "Superdp");
                 if (handle != IntPtr.Zero)
                 {
-                    SendMessage(handle, newInstanceMesssage, IntPtr.Zero, IntPtr.Zero);
+                    PostMessage(handle, newInstanceMesssage, IntPtr.Zero, IntPtr.Zero);
                     Environment.Exit(0);
+                    return;
                 }
                 Environment.Exit(1);
+                return;
             }
 
 

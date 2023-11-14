@@ -1,21 +1,25 @@
 <script setup>
-import { useTabManager } from "../composables";
 import { tabManagerKey } from "../keys";
 import { provide, ref } from "vue";
 import NewTabPage from "./pages/newtab/NewTabPage.vue";
 import NavBar from "./nav/NavBar.vue";
 import ConnectionPage from "./pages/ConnectionPage.vue";
 import { useResizeObserver } from "@vueuse/core";
+import { TabManager } from "../classes/TabManager";
 
-// TODO: Refactor this. Currently, the view is creating the state. Needs to be
-// the other way around.
-const tabManager = useTabManager();
-provide(tabManagerKey, tabManager);
+const props = defineProps({
+  tabManager: {
+    type: TabManager,
+    required: true,
+  },
+});
+
+provide(tabManagerKey, props.tabManager);
 
 const workAreaElem = ref(null);
 
 useResizeObserver(workAreaElem, () =>
-  tabManager.setSize(workAreaElem.value.getBoundingClientRect())
+  props.tabManager.setSize(workAreaElem.value.getBoundingClientRect())
 );
 </script>
 

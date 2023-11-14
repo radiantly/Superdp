@@ -2,7 +2,7 @@
 import { computed, reactive, ref } from "vue";
 import { Tab } from "../../classes/Tab.js";
 import { UseTimeAgo } from "@vueuse/components";
-import InputBox from "../InputBox.vue";
+import Terminal from "../Terminal.vue";
 const props = defineProps({
   tab: {
     type: Tab,
@@ -12,56 +12,58 @@ const props = defineProps({
 const client = computed(() => props.tab.client);
 
 const actionBtnText = computed(() =>
-  props.tab.props.ownsRDPControl && props.tab.props.connectInProgress
-    ? "Connecting"
-    : "Connect"
+  props.tab.props.state === "connecting" ? "Connecting" : "Connect"
 );
-</script>
 
+// state
+
+// For RDP
+// "connected" Hide everything
+// else Show everything if not
+
+// For SSH
+// "attached" Hide everything
+// "connected" Hide everything
+// else Show sidebar
+// const visibleSideBar
+</script>
 <template>
-  <div
-    class="page-container"
-    :class="{ visible: !tab.props.rdpControlVisible }"
-  >
-    <div class="params-wrapper">
-      <InputBox v-model="client.props.name" placeholder="Name" />
-      <InputBox v-model="client.props.host" placeholder="Hostname" />
-      <InputBox v-model="client.props.username" placeholder="Username" />
-      <InputBox
-        v-model="client.props.password"
-        placeholder="Password"
-        type="password"
-      />
-      <input
-        class="action-btn"
-        type="button"
-        :value="actionBtnText"
-        :disabled="actionBtnText === 'Connecting'"
-        @click="() => tab.connect()"
-      />
-    </div>
-    <div class="scrollable">
-      <div class="connection-log" @mousemove="handleMouseMove">
-        <template v-for="({ date, content }, index) of tab.logs" :key="index">
-          <UseTimeAgo v-slot="{ timeAgo }" :time="date">
-            <div class="reltime" :title="date.toLocaleString()">
-              {{ timeAgo }}
-            </div>
-          </UseTimeAgo>
-          <div>{{ content }}</div>
-        </template>
+  <div class="page-stack">
+    <Terminal v-show="tab.props.type === 'ssh'" class="terminal" :tab="tab" />
+    <div
+      class="page-container"
+      :class="{ visible: tab.props.state !== 'connected' }"
+    >
+      <div class="scrollable">
+        <div class="connection-log">
+          <template v-for="({ date, content }, index) of tab.logs" :key="index">
+            <UseTimeAgo v-slot="{ timeAgo }" :time="date">
+              <div class="reltime" :title="date.toLocaleString()">
+                {{ timeAgo }}
+              </div>
+            </UseTimeAgo>
+            <div>{{ content }}</div>
+          </template>
+        </div>
+        <div class="anchor"></div>
       </div>
-      <div class="anchor"></div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.page-stack {
+  display: grid;
+  grid-template: 1fr / 1fr;
+  flex-grow: 1;
+}
+.page-stack > * {
+  grid-area: 1 / 1 / span 1 / span 1;
+}
 .page-container {
   display: flex;
   flex-direction: column;
   background-color: var(--dark-gray);
-  flex-grow: 1;
   opacity: 0;
   pointer-events: none;
 }
@@ -71,14 +73,8 @@ const actionBtnText = computed(() =>
   pointer-events: auto;
 }
 
-.params-wrapper {
-  display: flex;
-  padding: 15px 20px 5px;
-  gap: 15px;
-}
-
-.params-wrapper > :deep(.input-box) {
-  flex-grow: 1;
+.terminal {
+  z-index: 42;
 }
 
 .action-btn {

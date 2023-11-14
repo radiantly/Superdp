@@ -1,8 +1,7 @@
 <script setup>
 import ResizableSidebar from "../../side/ResizableSidebar.vue";
 
-import { provide, shallowRef, computed, watchEffect } from "vue";
-import { focusedItemIdSidebarKey } from "../../../keys";
+import { watchEffect, shallowReactive } from "vue";
 import ClientEntryEdit from "./ClientEntryEdit.vue";
 import { ClientEntry } from "../../../classes/ClientEntry";
 import DirEntryEdit from "./DirEntryEdit.vue";
@@ -11,28 +10,31 @@ import Connections from "../../side/Connections.vue";
 
 // if we don't use a shallowRef here, the assigned entry object is proxied
 // and no longer equal to the original
-const focusedEntry = shallowRef(null);
+const sideProps = shallowReactive({});
+watchEffect(() => (sideProps.activeEntry = sideProps.focusedEntry));
 
 // Reset focused entry if the entry is deleted
 watchEffect(() => {
-  if (!focusedEntry.value) return;
-  if (focusedEntry.value.root === clientManager.root) return;
-  focusedEntry.value = null;
+  if (!sideProps.activeEntry) return;
+  if (sideProps.activeEntry.root === clientManager.root) return;
+  sideProps.activeEntry = null;
 });
-
-provide(focusedItemIdSidebarKey, focusedEntry);
 </script>
 
 <template>
   <div class="page-container">
     <ResizableSidebar>
-      <Connections />
+      <Connections :side-props="sideProps" />
     </ResizableSidebar>
     <div style="flex-grow: 1">
-      <DirEntryEdit :entry="focusedEntry" v-if="focusedEntry?.isDir()" />
+      <DirEntryEdit
+        :entry="sideProps.activeEntry"
+        v-if="sideProps.activeEntry?.isDir()"
+      />
       <ClientEntryEdit
-        :entry="focusedEntry"
-        v-else-if="focusedEntry instanceof ClientEntry"
+        :entry="sideProps.activeEntry"
+        :full-size="true"
+        v-else-if="sideProps.activeEntry instanceof ClientEntry"
       />
     </div>
   </div>

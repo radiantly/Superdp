@@ -1,7 +1,7 @@
 import { useDebounceFn } from "@vueuse/core";
 import { Client } from "./Client";
 import { DirEntry } from "./DirEntry";
-import { interopQueen } from "../globals";
+import { broadcast } from "../globals";
 
 export class ChangeManager {
   #reportChanges;
@@ -9,7 +9,7 @@ export class ChangeManager {
     this.reset();
 
     this.#reportChanges = useDebounceFn(() => this.#broadcast(), 222, {
-      maxWait: 999,
+      maxWait: 444,
     });
   }
 
@@ -31,18 +31,19 @@ export class ChangeManager {
   }
 
   #prepareSerializedMessage() {
-    return JSON.stringify({
+    return {
       type: "RECONCILE",
       changes: {
         clients: this.#serializeSet(this.changes.clients),
         dir_entries: this.#serializeSet(this.changes.dir_entries),
       },
-    });
+    };
   }
 
-  async #broadcast() {
+  #broadcast() {
     const message = this.#prepareSerializedMessage();
     this.reset();
-    await interopQueen.BroadcastMessageToOtherInstances(message);
+    console.debug("< broadcast", message);
+    broadcast.postMessage(message);
   }
 }

@@ -52,6 +52,10 @@ export class DirEntry extends Entry {
     parentEntry?.addChild(this);
   }
 
+  get label() {
+    return this.props.name;
+  }
+
   #populateProps({ name = "New Directory", collapsed = false } = {}) {
     this.propsWatcher.ignoreUpdates(() => {
       this.props.name = name;

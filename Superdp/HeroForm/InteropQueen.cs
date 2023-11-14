@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Superdp
 {
+    using static Native;
     public partial class HeroForm : Form
     {
         [ClassInterface(ClassInterfaceType.AutoDual)]
@@ -10,10 +11,12 @@ namespace Superdp
         public class InteropQueen
         {
             private readonly HeroForm form;
+            public readonly long t;
 
             public InteropQueen(HeroForm form)
             {
                 this.form = form;
+                t = form.creationTime;
             }
 
             public long GetFormCreationTimestamp()
@@ -24,18 +27,6 @@ namespace Superdp
 
             #region TitleBarActions
             // https://github.com/MicrosoftEdge/WebView2Feedback/issues/200
-            private const int WM_NCLBUTTONDOWN = 0xA1;
-            private const int WM_NCRBUTTONDOWN = 0xA4;
-            private const int HT_CAPTION = 0x2;
-
-            [return: MarshalAs(UnmanagedType.Bool)]
-            [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-            private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
-            [DllImport("user32.dll")]
-            private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
-            [DllImport("user32.dll")]
-            private static extern bool ReleaseCapture();
 
             public void MouseDownWindowDrag()
             {
@@ -59,29 +50,30 @@ namespace Superdp
                 newForm.interopQueen.MouseDownWindowDragWithTab(serializedTab);
             }
 
-            public void BroadcastMessageToOtherInstances(string message)
-            {
-                form.manager.BroadcastWebMessage(message, form);
-            }
-
             public string ReadConf() => form.manager.Conf;
             public void WriteConf(string contents) => form.manager.Conf = contents;
 
-            public void RDPConnect(string clientId, string host, string username, string password)
+            public void Connect(string jsonString)
             {
-                Debug.WriteLine($"Connect Request for {host}");
-                RDPFormManager.Connect(form, clientId, host, username, password);
+                Debug.WriteLine("Connection Request");
+                dynamic options = new DynJson(jsonString);
+                form.connectionManagers[options.type].Connect(options);
             }
 
-            public void RDPDisconnect(string clientId)
+            public void Disconnect(string jsonString)
             {
-                RDPFormManager.Disconnect(form, clientId);
+                dynamic options = new DynJson(jsonString);
+                form.connectionManagers[options.type].Disconnect(options);
             }
 
-            public void RDPSetCharacteristics(string clientId, int x, int y, int width, int height, bool visibility)
+            public void Update(string jsonString)
             {
-                RDPFormManager.SetCharacteristics(form, clientId, new Point(x, y), new Size(width, height), visibility);
+                dynamic options = new DynJson(jsonString);
+                form.connectionManagers[options.type].Update(options);
             }
+
+            public void SSHInput(string tabId, string text) =>
+                ((SSHManager)form.connectionManagers["ssh"]).Input(tabId, text);
 
             public void BringWebViewToFront()
             {

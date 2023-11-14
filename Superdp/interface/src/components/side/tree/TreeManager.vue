@@ -1,23 +1,23 @@
 <script setup>
 import TreeView from "./TreeView.vue";
 import { inject, computed, provide } from "vue";
-import { focusedItemIdSidebarKey } from "../../../keys";
 import { clientManager, contextMenu, dragManager } from "../../../globals";
 import { DirEntry } from "../../../classes/DirEntry";
 import { Entry } from "../../../classes/Entry";
 
-const focusedEntry = inject(focusedItemIdSidebarKey);
+const sideProps = inject("sideProps");
 
 const handleContextMenu = (e) => {
   contextMenu.show(e, [
     {
       label: "New connection...",
-      handler: () => (focusedEntry.value = clientManager.createClient().entry),
+      handler: () =>
+        (sideProps.focusedEntry = clientManager.createClient().entry),
     },
     {
       label: "New directory group...",
       handler: () =>
-        (focusedEntry.value = new DirEntry({
+        (sideProps.focusedEntry = new DirEntry({
           manager: clientManager,
           parentEntry: clientManager.root,
         })),

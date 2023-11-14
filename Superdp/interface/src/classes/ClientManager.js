@@ -2,8 +2,9 @@ import { useDebounceFn } from "@vueuse/core";
 import { ChangeManager } from "./ChangeManager";
 import { Client } from "./Client";
 import { DirEntry } from "./DirEntry";
-import { interopQueen } from "../globals";
+import { broadcast, interopQueen } from "../globals";
 import { Tab } from "./Tab";
+import { SessionManager } from "./SessionManager";
 
 export class ClientManager {
   #debouncedWriteConfig;
@@ -11,7 +12,7 @@ export class ClientManager {
     this.changes = new ChangeManager();
     this.idToClient = new Map();
     this.dirEntries = new Map();
-    this.tabManagers = new Set();
+    this.session = new SessionManager();
 
     // Populate clients
     this.reconcile(conf);
@@ -21,12 +22,31 @@ export class ClientManager {
       this.root = new DirEntry({ manager: this });
       this.#writeConfig();
     }
-    interopQueen();
+
     this.#debouncedWriteConfig = useDebounceFn(() => this.#writeConfig(), 5000);
+
+    const messageHandler = (message) => this.processMessage(message);
+    chrome.webview.addEventListener("message", (msg) => {
+      console.debug("> webview", msg);
+      messageHandler(msg);
+    });
+    broadcast.addEventListener("message", (msg) => {
+      console.debug("> broadcast", msg);
+      messageHandler(msg);
+    });
+
+    window.chrome.webview.addEventListener("sharedbufferreceived", (e) => {
+      console.debug("> buffer", e);
+      window.ev = e;
+
+      if (e.additionalData?.tabId)
+        return this.session
+          .getTab(e.additionalData.tabId)
+          ?.processSharedBuffer(e);
+    });
   }
 
   processMessage({ data }) {
-    console.debug("RECV", data);
     if (data.clientId)
       return this.idToClient.get(data.clientId)?.processMessage(data);
 
@@ -34,11 +54,12 @@ export class ClientManager {
       case "RECONCILE":
         this.reconcile(data.changes);
         break;
+
       case "TAB_ADD":
         this.reconcile({ clients: [data.tab.client] });
 
         // TODO: make this nicer
-        const tabManager = this.tabManagers.keys().next().value;
+        const tabManager = this.session.children[0].keys().next().value;
         const client = this.get(data.tab.client.id);
         const tab = new Tab({
           client,
@@ -47,6 +68,9 @@ export class ClientManager {
         });
         client.recreateExistingTab(tabManager, tab);
         break;
+
+      default:
+        console.assert(false, "Unknown message type");
     }
   }
 

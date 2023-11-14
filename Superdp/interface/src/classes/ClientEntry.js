@@ -10,4 +10,8 @@ export class ClientEntry extends Entry {
   get id() {
     return this.client.id;
   }
+
+  get label() {
+    return this.client.label.value;
+  }
 }

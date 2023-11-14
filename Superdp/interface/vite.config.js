@@ -8,6 +8,9 @@ export default defineConfig({
   build: {
     // support for https://caniuse.com/css-has
     target: "edge105",
+
+    // will make debugging easier
+    sourcemap: true,
   },
   plugins: [vue()],
   resolve: {

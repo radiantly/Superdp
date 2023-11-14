@@ -1,9 +1,11 @@
 using System.Diagnostics;
 using System.Dynamic;
 using System.Text.Json;
+using Microsoft.Web.WebView2.Core;
 
 namespace Superdp
 {
+    using static Native;
     public partial class HeroForm
     {
         public static readonly Color BackgroundColor = Color.FromArgb(30, 30, 30);
@@ -16,8 +18,11 @@ namespace Superdp
         private readonly List<string> pendingWebMessages = new();
 
         private readonly SmoothLoadingBar bar;
+        private readonly string id;
+        private readonly Dictionary<string, IConnectionManager> connectionManagers;
         public HeroForm(FormManager manager)
         {
+            id = Guid.NewGuid().ToString();
             DoubleBuffered = true;
             BackColor = BackgroundColor;
             creationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -27,6 +32,7 @@ namespace Superdp
             MaximizedBounds = Screen.FromControl(this).WorkingArea;
 
             Icon = Properties.Resources.favicon;
+            connectionManagers = new() { ["rdp"] = new RDPManager(this), ["ssh"] = new SSHManager(this) };
 
             Resize += MainForm_Resize;
 
@@ -41,7 +47,7 @@ namespace Superdp
 
         private void HeroForm_Move(object? sender, EventArgs e)
         {
-            if (dragSerializedTab == null || !flagTabDragActive) return;
+            if (dragSerializedTab == null || !flagTabDragActive || manager.openForms.Count <= 1) return;
 
             foreach (HeroForm form in manager.openForms)
             {
@@ -49,9 +55,24 @@ namespace Superdp
 
                 if (form.IsOverTabBar(form.PointToClient(Cursor.Position)))
                 {
+                    var originalStyle = GetWindowLongPtr(Handle, GWL_EXSTYLE);
+                    SetWindowLongPtr(Handle, GWL_EXSTYLE, originalStyle | WS_EX_TRANSPARENT | WS_EX_LAYERED);
+
+                    // We need to check if the form we're moving the tab is
+                    // being obscured by a different window, in which case
+                    // we don't move the tab
+                    if (GetAncestor(WindowFromPoint(Cursor.Position), 2) != form.Handle)
+                    {
+                        SetWindowLongPtr(Handle, GWL_EXSTYLE, originalStyle);
+                        continue;
+                    }
+
+                    // Move tab and close current form
                     form.PostWebMessage(dragSerializedTab);
                     dragSerializedTab = null;
+                    // RDPManager.TransferOwnership(this, form);
                     Close();
+
                     break;
                 }
             }
@@ -100,11 +121,20 @@ namespace Superdp
             webView.CoreWebView2.Navigate("http://localhost:5173");
 #else
             // https://github.com/MicrosoftEdge/WebView2Feedback/issues/2381
-            webView.CoreWebView2.SetVirtualHostNameToFolderMapping("superdp.example", "interface\\dist", CoreWebView2HostResourceAccessKind.Allow);
+            webView.CoreWebView2.SetVirtualHostNameToFolderMapping("superdp.example", "interface\\dist", Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
             webView.CoreWebView2.Navigate("https://superdp.example/index.html");
 #endif
 
             webView.CoreWebView2.AddHostObjectToScript("interopQueen", interopQueen);
+            webView.CoreWebView2.PermissionRequested += CoreWebView2_PermissionRequested;
+        }
+
+        private void CoreWebView2_PermissionRequested(object? sender, Microsoft.Web.WebView2.Core.CoreWebView2PermissionRequestedEventArgs e)
+        {
+            var def = e.GetDeferral();
+            e.State = CoreWebView2PermissionState.Allow;
+            e.Handled = true;
+            def.Complete();
         }
 
         private bool _interfaceReady = false;
@@ -142,9 +172,6 @@ namespace Superdp
             PostWebMessage(msgStr);
         }
 
-        private const int WM_NCLBUTTONUP = 0xA2;
-        private const int WM_ENTERSIZEMOVE = 0x0231;
-        private const int WM_EXITSIZEMOVE = 0x0232;
         protected override void WndProc(ref Message m)
         {
             // Debug.WriteLine(m.Msg);
@@ -162,6 +189,9 @@ namespace Superdp
                 case WM_EXITSIZEMOVE:
                     flagTabDragActive = false;
                     dragSerializedTab = null;
+                    break;
+                case WM_NCHITTEST:
+                    Debug.WriteLine("Hit test called");
                     break;
             }
             base.WndProc(ref m);

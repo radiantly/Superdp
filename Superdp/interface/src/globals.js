@@ -1,18 +1,18 @@
 import { ClientManager } from "./classes/ClientManager";
 import { DragManager } from "./classes/DragManager";
 import { ContextMenu } from "./classes/ContextMenu";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
-export const interopQueen = chrome.webview.hostObjects.interopQueen;
+export const broadcast = new BroadcastChannel("everybody");
+
+export const interopQueen = new Proxy(chrome.webview.hostObjects.interopQueen, {
+  get(queen, key) {
+    console.debug("<", key);
+    return queen[key];
+  },
+});
 
 export const dragManager = new DragManager();
-
-export const webViewInForeground = ref(0);
-watch(webViewInForeground, (newValue) =>
-  newValue
-    ? interopQueen.BringWebViewToFront()
-    : interopQueen.SendWebViewToBack()
-);
 
 export const overlayVisible = ref(false);
 
@@ -23,7 +23,13 @@ export const clientManager = new ClientManager(conf);
  * Context Menu
  */
 export const contextMenu = new ContextMenu();
-watch(
-  () => contextMenu.props.visible,
-  (isVisible) => (webViewInForeground.value += isVisible ? 1 : -1)
+
+// Replace this with watchEffect?
+export const webViewInBackground = computed(
+  () => !overlayVisible.value && !contextMenu.props.visible
+);
+watch(webViewInBackground, (newValue) =>
+  newValue
+    ? interopQueen.SendWebViewToBack()
+    : interopQueen.BringWebViewToFront()
 );

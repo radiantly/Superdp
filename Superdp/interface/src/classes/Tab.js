@@ -2,21 +2,20 @@ import { computed, shallowReactive, shallowRef, watch } from "vue";
 import { watchDebounced } from "@vueuse/core";
 import { interopQueen } from "../globals";
 import { Client } from "./Client";
+import { v4 as uuidv4 } from "uuid";
 
 export class Tab {
   constructor({ client, props = {}, serializedLogs = [] }) {
+    this.id = uuidv4();
+
     this.client = client;
     console.assert(this.client instanceof Client);
 
     this.isActive = computed(() => this.props.parent?.props.active === this);
     this.props = shallowReactive({
-      rdpControlVisible: false,
-      connectInProgress: false,
-
-      // A tab from a different window could possibly own the rdp control
-      ownsRDPControl: true,
-
       ...props,
+      type: null,
+      state: "disconnected",
       parent: null,
     });
 
@@ -27,87 +26,139 @@ export class Tab {
       }))
     );
 
-    const watchHandler = () => {
-      if (!this.props.ownsRDPControl || !this.props.parent) return;
-      this.#setRDPControlCharacteristics();
-    };
+    this.dimensions = computed(() => {
+      if (this.props.type === "rdp")
+        return this.props.parent?.props.workAreaSize;
 
-    // Set rdp control visibility based on whether tab is active
-    watch(this.isActive, watchHandler);
+      if (this.props.type === "ssh")
+        return { rows: this.props.rows, cols: this.props.cols };
 
-    // rdp control resize
-    watchDebounced(() => this.props.parent?.props.workAreaSize, watchHandler, {
-      debounce: 222,
-      maxWait: 555,
+      return {};
     });
+
+    this.connectionOptions = computed(() => ({
+      clientId: this.client.id,
+      tabId: this.id,
+      type: this.props.type,
+
+      client: {
+        ...this.client.props,
+      },
+
+      ...this.dimensions.value,
+
+      visible: this.isActive.value,
+    }));
+
+    this.displayBuffer = null;
+    this.sizeBuffer = null;
+
+    const debounceParams = { debounce: 222, maxWait: 555 };
+
+    // rdp window show/hide
+    watch(
+      this.isActive,
+      () =>
+        this.props.type === "rdp" &&
+        this.props.state === "connected" &&
+        this.update()
+    );
+
+    // rdp window resize
+    watchDebounced(
+      this.dimensions,
+      () =>
+        this.isActive.value &&
+        this.props.type === "rdp" &&
+        this.props.state === "connected" &&
+        this.update(),
+      debounceParams
+    );
+
+    // ssh terminal resize
+    watchDebounced(
+      () => [this.props.rows, this.props.cols],
+      () => {
+        console.log(this.props.rows, this.props.cols);
+        if (!this.isActive.value || this.props.type !== "ssh") return;
+        this.update();
+      },
+      debounceParams
+    );
   }
 
-  get id() {
-    return this.client.id;
-  }
-
-  get #serializedLogs() {
+  getSerializedLogs() {
     return this.logs.map(({ date, content }) => ({
       timestamp: +date,
       content,
     }));
   }
 
-  async #setRDPControlCharacteristics(
-    { x, y, width, height, shouldBeVisible } = {
-      ...this.props.parent?.props.workAreaSize,
-      shouldBeVisible: this.isActive.value,
-    }
-  ) {
-    await interopQueen.RDPSetCharacteristics(
-      this.id,
-      x,
-      y,
-      width,
-      height,
-      shouldBeVisible
-    );
-  }
-
-  async connect() {
-    this.ownsRDPControl = true;
-    this.props.connectInProgress = true;
-    this.#setRDPControlCharacteristics();
-    await interopQueen.RDPConnect(
-      this.id,
-      this.client.props.host,
-      this.client.props.username,
-      this.client.props.password
-    );
-  }
-
-  async disconnect() {
-    if (!this.ownsRDPControl) return;
-    await interopQueen.RDPDisconnect(this.id);
-  }
-
   log(text) {
     this.logs.push({ date: new Date(), content: text });
   }
 
-  processRDPLog({ content, visibility, event }) {
-    this.props.rdpControlVisible = visibility;
-    if (event) this.props.connectInProgress = false;
-    this.log(content);
+  async connect() {
+    this.props.state = "connecting";
+    if (this.props.type === null) this.props.type = this.client.props.type;
+    return await interopQueen.Connect(
+      JSON.stringify(this.connectionOptions.value)
+    );
   }
 
-  giveupOwnership() {
-    this.props.ownsRDPControl = false;
-    this.props.parent?.remove(this);
+  async disconnect() {
+    this.props.state = "disconnecting";
+    return await interopQueen.Disconnect(
+      JSON.stringify(this.connectionOptions.value)
+    );
+  }
+
+  async update() {
+    console.log(this.connectionOptions.value);
+    return await interopQueen.Update(
+      JSON.stringify(this.connectionOptions.value)
+    );
+  }
+
+  processMessage(msg) {
+    switch (msg.type) {
+      case "RDP_LOG":
+        const { content, event } = msg;
+
+        if (event === "disconnect") this.props.state = "disconnected";
+        else if (event === "connect") this.props.state = "connected";
+
+        this.log(content);
+        break;
+
+      case "RDP_NEWOWNER":
+        this.props.state = "disconnected";
+        this.props.parent?.remove(this);
+        break;
+
+      default:
+        console.assert(false, "Unknown message type");
+    }
+  }
+
+  processSharedBuffer(e) {
+    const displayBufferSize = e.additionalData.displayBufferSize;
+    const buffer = e.getBuffer();
+    this.displayBuffer = new Uint8Array(buffer, 0, displayBufferSize);
+    this.sizeBuffer = new Uint32Array(buffer, displayBufferSize, 1);
+  }
+
+  resizeTerminal(rows, cols) {
+    this.props.rows = rows;
+    this.props.cols = cols;
   }
 
   serialize() {
     return {
       client: this.client.serialize(),
-      logs: this.#serializedLogs,
+      logs: this.getSerializedLogs(),
       props: {
         rdpControlVisible: this.props.rdpControlVisible,
-        connectInProgress: this.props.connectInProgress,
         ownsRDPControl: this.props.ownsRDPControl,
       },
     };

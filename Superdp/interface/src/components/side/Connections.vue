@@ -1,28 +1,19 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
+import { provide, reactive, shallowReactive } from "vue";
 import TreeManager from "./tree/TreeManager.vue";
+import SideTitle from "./SideTitle.vue";
+
+const props = defineProps({
+  sideProps: {
+    default: shallowReactive({}),
+  },
+});
+
+provide("sideProps", props.sideProps);
 </script>
 <template>
-  <div class="top-row">
-    <div class="title">Connection manager</div>
-    <!-- TODO: Add/Teleport icons here -->
-  </div>
+  <SideTitle label="Connection manager" />
+  <!-- TODO: Add/Teleport icons here -->
   <TreeManager />
 </template>
-<style scoped>
-.top-row {
-  display: flex;
-  min-width: 0;
-}
-.title {
-  flex-grow: 1;
-  text-transform: uppercase;
-  color: #bbb;
-  font-weight: 400;
-  font-size: 11px;
-  padding: 12px 18px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-</style>

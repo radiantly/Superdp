@@ -4,22 +4,27 @@ import CapturableDiv from "../CapturableDiv.vue";
 
 // Handle resizing of sidebar
 const width = ref(300);
+const sidebar = ref(null);
+
+let offsetLeft = 0;
+const handleMouseDown = (e) => {
+  offsetLeft = sidebar.value.getBoundingClientRect().left;
+};
 
 const handleMouseMove = (e) => {
   if (e.buttons !== 1) return;
 
-  // We assume that the sidebar is actually at the side of the window.
-  // TODO: We will need to subtract with the offset and clamp at 0 if not
-  width.value = e.x;
+  width.value = Math.max(1, e.x - offsetLeft);
 };
 </script>
 
 <template>
-  <div class="sidebar">
+  <div class="sidebar" ref="sidebar">
     <slot></slot>
     <CapturableDiv
       class="resize-handle"
       draggable="false"
+      @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
     />
   </div>
@@ -47,9 +52,21 @@ const handleMouseMove = (e) => {
   height: 100%;
   cursor: ew-resize;
   transition: background-color 0.25s ease;
+  z-index: 13;
 }
 
 .resize-handle:hover {
   background-color: #007acc;
+}
+
+.sidebar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 15px;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, #222);
 }
 </style>

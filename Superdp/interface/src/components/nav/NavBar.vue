@@ -4,12 +4,7 @@ import LabeledTab from "./LabeledTab.vue";
 import NewTab from "./NewTab.vue";
 import { inject } from "vue";
 import { TabManager } from "../../classes/TabManager.js";
-import {
-  overlayVisible,
-  webViewInForeground,
-  interopQueen,
-  contextMenu,
-} from "../../globals";
+import { overlayVisible, interopQueen, contextMenu } from "../../globals";
 import NavLogo from "./NavLogo.vue";
 
 /** @type {TabManager} */
@@ -47,8 +42,7 @@ const handleContextMenu = (e, tab) => {
 };
 
 const handleMouseEnter = (e) => {
-  if (tabManager.props.active === TabManager.NEW_TAB) return;
-  webViewInForeground.value++;
+  // if (tabManager.props.active === TabManager.NEW_TAB) return;
   overlayVisible.value = true;
 };
 </script>
@@ -65,7 +59,7 @@ const handleMouseEnter = (e) => {
         v-for="tab of tabManager.tabs"
         :key="tab.client.id"
         :tab="tab"
-        @tabClose="() => handleTabClose(tab)"
+        @close="() => handleTabClose(tab)"
         @contextmenu.prevent="(e) => handleContextMenu(e, tab)"
       />
       <NewTab

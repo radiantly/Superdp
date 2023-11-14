@@ -11,12 +11,13 @@
 		<Platforms>AnyCPU;x64</Platforms>
 		<BaseIntermediateOutputPath>$(SolutionDir)obj\</BaseIntermediateOutputPath>
 		<ApplicationIcon>interface\public\favicon.ico</ApplicationIcon>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="interface\**" />
-	  <EmbeddedResource Remove="interface\**" />
-	  <None Remove="interface\**" />
+	  <Compile Remove="interface\dist\**" />
+	  <EmbeddedResource Remove="interface\dist\**" />
+	  <None Remove="interface\dist\**" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -44,7 +45,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.1901.177" />
+	  <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2045.28" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -69,23 +70,18 @@
 
 	<Target Name="BuildInterface" BeforeTargets="BeforeBuild" Condition=" '$(Configuration)' == 'Release' ">
 	  <Exec Command="cd $(ProjectDir)interface &amp;&amp; npm run build" />
+		<ItemGroup>
+			<Content Include="$(ProjectDir)interface\dist\**\*">
+				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			</Content>
+		</ItemGroup>
 	</Target>
-
-	<ItemGroup Condition=" '$(Configuration)' == 'Release' ">
-		<Content Include="$(ProjectDir)interface\dist\**\*">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-	</ItemGroup>
 
 	<ItemGroup>
 	  <None Update="Properties\Settings.settings">
 	    <Generator>SettingsSingleFileGenerator</Generator>
 	    <LastGenOutput>Settings.Designer.cs</LastGenOutput>
 	  </None>
-	</ItemGroup>
-
-	<ItemGroup>
-		<RuntimeHostConfigurationOption Include="System.Globalization.Invariant" Value="true" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -6,6 +6,7 @@ import { Entry } from "../../../classes/Entry.js";
 import { DirEntry } from "../../../classes/DirEntry.js";
 import { focusedItemIdSidebarKey, tabManagerKey } from "../../../keys";
 import { clientManager, contextMenu, dragManager } from "../../../globals";
+import IconPlay from "../../icons/IconPlay.vue";
 const props = defineProps({
   entry: {
     type: Entry,
@@ -19,19 +20,23 @@ const props = defineProps({
 
 const icons = { circle: IconCircle, collapse: IconSortDown };
 
-const focusedEntry = inject(focusedItemIdSidebarKey);
+const sideProps = inject("sideProps");
 
 const chosenIcon = props.entry.isDir() ? "collapse" : "circle";
 const handleMouseDown = (e) => {
   // mark active
   console.log(props.entry.root);
-  focusedEntry.value = props.entry;
+  sideProps.focusedEntry = props.entry;
 };
 
 const validDrop = inject("validDrop");
 
 const handleClick = (e) => {
   if (props.entry.isDir()) props.entry.toggleCollapse();
+};
+
+const handleMouseEnter = (e) => {
+  sideProps.hoveredEntry = props.entry;
 };
 
 const handleMouseLeave = (e) => {
@@ -64,21 +69,20 @@ const handleDrop = (e) => {
   console.log(props.entry, e);
 };
 
-const tabManager = inject(tabManagerKey);
 const handleContextMenu = (e) => {
   const menuItems = {
     dir: [
       {
         label: "New connection...",
         handler: () =>
-          (focusedEntry.value = clientManager.createClient({
+          (sideProps.focusedEntry = clientManager.createClient({
             parentEntry: props.entry,
           }).entry),
       },
       {
         label: "New directory group...",
         handler: () =>
-          (focusedEntry.value = new DirEntry({
+          (sideProps.focusedEntry = new DirEntry({
             manager: clientManager,
             parentEntry: props.entry,
           })),
@@ -91,12 +95,13 @@ const handleContextMenu = (e) => {
     leaf: [
       {
         label: "Connect",
-        handler: () => props.entry.client.createOrSwitchToTab(tabManager),
+        handler: () =>
+          props.entry.client.createTab(clientManager.session.children[0]),
       },
       {
         label: "Duplicate",
         handler: () =>
-          (focusedEntry.value = clientManager.createClient({
+          (sideProps.focusedEntry = clientManager.createClient({
             parentEntry: props.entry.parent,
             clientProps: props.entry.client.props,
           }).entry),
@@ -115,6 +120,7 @@ const handleContextMenu = (e) => {
   <div
     class="row"
     @mousedown.passive="handleMouseDown"
+    @mouseenter.passive="handleMouseEnter"
     @mouseleave.passive="handleMouseLeave"
     @mouseup.passive="handleMouseUp"
     @click="handleClick"
@@ -123,7 +129,7 @@ const handleContextMenu = (e) => {
     @drop="handleDrop"
     :class="{
       collapsed: entry.props?.collapsed,
-      active: entry === focusedEntry,
+      active: entry === sideProps.activeEntry,
       [props.entry.type]: true,
     }"
   >
@@ -132,7 +138,12 @@ const handleContextMenu = (e) => {
       <component :is="icons[chosenIcon]" />
     </div>
     <div class="label">
-      {{ entry.isDir() ? entry.props.name : entry.client.label.value }}
+      {{ entry.label }}
+    </div>
+    <div class="hover-icons">
+      <div class="icon play">
+        <IconPlay />
+      </div>
     </div>
   </div>
 </template>
@@ -164,6 +175,7 @@ const handleContextMenu = (e) => {
   margin-left: 3px;
   white-space: nowrap;
   text-overflow: clip;
+  position: relative;
 }
 
 .icon {
@@ -193,5 +205,26 @@ const handleContextMenu = (e) => {
 
 .collapsed > .icon.collapse > svg {
   transform: rotate(-90deg);
+}
+
+.icon.play {
+  --icon-size: 20px;
+  width: var(--icon-size);
+}
+
+.icon.play > svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+.hover-icons {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  margin-right: 10px;
+  opacity: 0;
+}
+.row:hover .hover-icons {
+  opacity: 1;
 }
 </style>

@@ -9,7 +9,7 @@ namespace Superdp
         CONNECTED = 1,
         CONNECTING = 2
     }
-    internal class RDPConnectionParams
+    public class RDPConnectionParams
     {
         public string Host { get; init; }
         public string Username { get; init; }
@@ -32,14 +32,51 @@ namespace Superdp
 
     public class RDPForm : Form
     {
-        private HeroForm owningForm;
         private bool shouldBeVisible = false;
-        private bool flagConnectAfterDisconnect = false;
-        private bool flagDisconnectInProgress = false;
-        readonly private string clientId;
+        private bool pendingRDPSizeUpdate = false;
         readonly private AxMSTSCLib.AxMsRdpClient11NotSafeForScripting rdp;
-        private RDPConnectionParams want = new(), have = new();
-        public RDPForm(HeroForm parent, string clientId)
+
+        public event Action? OnDisconnect;
+
+        public required string ClientId { get; init; }
+        public required string TabId { get; set; }
+
+        public required RDPConnectionParams ConnectionParams { get; init; }
+
+        public HeroForm OwningForm { get; private set; }
+
+        public void SetOwningForm(HeroForm newForm, string tabId)
+        {
+            bool reparentForm = OwningForm != newForm;
+            bool isNewTab = TabId != tabId;
+
+            if (reparentForm)
+            {
+                OwningForm.Controls.Remove(this);
+                OwningForm.Invalidate();
+            }
+
+            if (isNewTab)
+            {
+                OwningForm.PostWebMessage(message =>
+                {
+                    message.clientId = ClientId;
+                    message.tabId = TabId;
+                    message.type = "RDP_NEWOWNER";
+                });
+            }
+
+            OwningForm = newForm;
+            TabId = tabId;
+
+            if (reparentForm)
+            {
+                OwningForm.Controls.Add(this);
+                OwningForm.EnsureWebViewPositioning();
+            }
+        }
+
+        public RDPForm(HeroForm parent)
         {
             // the lines below were in the default form template
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -49,17 +86,13 @@ namespace Superdp
             TopLevel = false;
             Name = "RDPForm";
             Text = "RDPForm";
-            owningForm = parent;
-            this.clientId = clientId;
 
-            owningForm.Controls.Add(this);
-            owningForm.EnsureWebViewPositioning();
+            OwningForm = parent;
+            OwningForm.Controls.Add(this);
+            OwningForm.EnsureWebViewPositioning();
 
             Visible = false;
             BackColor = HeroForm.BackgroundColor;
-
-            Load += RDPForm_Load;
-            Resize += RDPForm_Resize;
 
             // rdp control
             rdp = new();
@@ -69,57 +102,30 @@ namespace Superdp
             rdp.OnConnected += Rdp_OnConnected;
             rdp.OnDisconnected += Rdp_OnDisconnected;
             rdp.OnAuthenticationWarningDisplayed += (sender, e) => Log("Authentication request");
+            ClientSizeChanged += (sender, e) =>
+            {
+                rdp.Size = ClientSize;
+                pendingRDPSizeUpdate = true;
+                RequestRDPSizeUpdate();
+            };
+            VisibleChanged += (sender, e) => RequestRDPSizeUpdate();
         }
 
-        private void RDPForm_Load(object? sender, EventArgs e)
-        {
-            rdp.Size = ClientSize;
-            rdp.Location = new Point(0, 0);
-        }
-
-        public void Connect(string host, string username, string password)
-        {
-            want = new RDPConnectionParams(host, username, password);
-            RequestConnect();
-        }
-
-        public void Disconnect()
-        {
-            if (ConnectionState == RDPConnectionState.DISCONNECTED) return;
-            flagDisconnectInProgress = true;
-            rdp.Disconnect();
-        }
-
-        private void RequestConnect()
+        public void Connect()
         {
             if (ConnectionState != RDPConnectionState.DISCONNECTED)
             {
-                if (have == want)
-                {
-                    Log("Session already exists");
-                    return;
-                }
-
-                if (flagDisconnectInProgress) flagConnectAfterDisconnect = true;
-                if (flagConnectAfterDisconnect) return;
-
-                Log("Disconnecting existing session");
-                flagDisconnectInProgress = true;
-                flagConnectAfterDisconnect = true;
-                rdp.Disconnect();
-
+                if (ConnectionState == RDPConnectionState.CONNECTED)
+                    Log("Connecting to existing session", "connect");
                 return;
             }
 
+            Log(string.Format("Trying to connect to {0}{1}{2}", ConnectionParams.Host, ConnectionParams.Username == "" ? "" : $" as {ConnectionParams.Username}", ConnectionParams.Password == "" ? "" : $"/***"));
 
-            Log(string.Format("Trying to connect to {0}{1}{2}", want.Host, want.Username == "" ? "" : $" as {want.Username}", want.Password == "" ? "" : $"/***"));
-
-            have = want;
-
-            rdp.Server = want.Host;
+            rdp.Server = ConnectionParams.Host;
             rdp.AdvancedSettings9.MaxReconnectAttempts = 1;
 
-            var split = want.Username.Split('\\', 2);
+            var split = ConnectionParams.Username.Split('\\', 2);
             if (split.Length == 2)
             {
                 rdp.Domain = split[0];
@@ -127,76 +133,54 @@ namespace Superdp
             }
             else
             {
-                rdp.UserName = want.Username;
+                rdp.UserName = ConnectionParams.Username;
             }
 
             var Secured = (IMsTscNonScriptable)rdp.GetOcx();
-            Secured.ClearTextPassword = want.Password;
-            rdp.AdvancedSettings9.ClearTextPassword = want.Password;
+            Secured.ClearTextPassword = ConnectionParams.Password;
+            rdp.AdvancedSettings9.ClearTextPassword = ConnectionParams.Password;
             rdp.AdvancedSettings9.EnableCredSspSupport = true;
 
             try
             {
                 rdp.Connect();
             }
-            catch
+            catch (Exception ex)
             {
-                Log("Invalid connection parameters");
+                Log($"Failure: {ex.Message}", "disconnect");
             }
-
         }
 
-        private void UpdateRDPDisplaySize()
+        public void Disconnect()
+        {
+            if (ConnectionState == RDPConnectionState.DISCONNECTED) return;
+            rdp.OnDisconnected -= Rdp_OnDisconnected;
+            rdp.Disconnect();
+            HandleDisconnect(-1, "Forced disconnect.");
+        }
+
+        private void RequestRDPSizeUpdate()
         {
             // TODO: Debounce this
             // Update: this is sorta debounced in the frontend
             try
             {
-                rdp.UpdateSessionDisplaySettings((uint)Width, (uint)Height, (uint)Width, (uint)Height, 0, 1, 1);
+                if (Visible && ConnectionState == RDPConnectionState.CONNECTED && pendingRDPSizeUpdate)
+                {
+                    pendingRDPSizeUpdate = false;
+                    rdp.UpdateSessionDisplaySettings((uint)Width, (uint)Height, (uint)Width, (uint)Height, 0, 1, 1);
+                }
             }
             catch { }
         }
 
-        private void RDPForm_Resize(object? sender, EventArgs e) => UpdateRDPDisplaySize();
-
-        public void SetPositioning(Point location, Size size)
-        {
-            Location = location;
-            Size = size;
-            rdp.Size = ClientSize;
-        }
-
-        public HeroForm OwningForm
-        {
-            get => owningForm;
-            set
-            {
-                if (owningForm == value) return;
-                owningForm.Controls.Remove(this);
-                owningForm.Invalidate();
-
-                owningForm.PostWebMessage(message =>
-                    {
-                        message.clientId = clientId;
-                        message.type = "RDP_NEWOWNER";
-                    });
-
-                owningForm = value;
-                owningForm.Controls.Add(this);
-                owningForm.EnsureWebViewPositioning();
-            }
-        }
-
         public bool ShouldBeVisible
         {
-            get { return shouldBeVisible; }
+            get => shouldBeVisible;
             set
             {
-                if (shouldBeVisible == value) return;
                 shouldBeVisible = value;
-                if (shouldBeVisible == false) Visible = false;
-                else if (ConnectionState == RDPConnectionState.CONNECTED) Visible = true;
-                Debug.WriteLine("RDPForm visibility: " + Visible);
+                Visible = shouldBeVisible && ConnectionState == RDPConnectionState.CONNECTED;
             }
         }
 
@@ -206,16 +190,14 @@ namespace Superdp
         }
 
         private void Rdp_OnDisconnected(object sender, AxMSTSCLib.IMsTscAxEvents_OnDisconnectedEvent e)
+            => HandleDisconnect(e.discReason, rdp.GetErrorDescription((uint)e.discReason, (uint)rdp.ExtendedDisconnectReason));
+
+        private void HandleDisconnect(int code, string reason)
         {
             Visible = false;
-            owningForm.Invalidate();
-            Log($"Disconnected({e.discReason}): {rdp.GetErrorDescription((uint)e.discReason, (uint)rdp.ExtendedDisconnectReason)}", "disconnect");
-            if (flagDisconnectInProgress) flagDisconnectInProgress = false;
-            if (flagConnectAfterDisconnect)
-            {
-                flagConnectAfterDisconnect = false;
-                RequestConnect();
-            }
+            OwningForm.Invalidate();
+            Log($"Disconnected({code}): {reason}", "disconnect");
+            OnDisconnect?.Invoke();
         }
 
         private void Rdp_OnConnected(object? sender, EventArgs e)
@@ -224,17 +206,17 @@ namespace Superdp
             {
                 Visible = true;
                 BringToFront();
-                owningForm.EnsureWebViewPositioning();
-                UpdateRDPDisplaySize();
+                OwningForm.EnsureWebViewPositioning();
             }
             Log("Connected", "connect");
         }
 
         public void Log(string content, string? @event = null)
         {
-            owningForm.PostWebMessage(msg =>
+            OwningForm.PostWebMessage(msg =>
             {
-                msg.clientId = clientId;
+                msg.clientId = ClientId;
+                msg.tabId = TabId;
                 msg.type = "RDP_LOG";
                 msg.content = content;
                 msg.visibility = Visible;
