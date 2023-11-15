@@ -7,13 +7,9 @@ export class SessionManager {
   }
 
   getTab(tabId) {
-    for (const tabManager of this.children) {
-      for (const tab of tabManager.tabs) {
-        if (tab.id === tabId) {
-          return tab;
-        }
-      }
-    }
+    for (const tabManager of this.children)
+      for (const tab of tabManager.tabs) if (tab.id === tabId) return tab;
+
     return null;
   }
 }

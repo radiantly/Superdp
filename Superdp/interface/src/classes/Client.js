@@ -67,13 +67,9 @@ export class Client {
       if (tab?.props.parent) tab.props.parent.remove(tab);
     }
 
-    if (!tab) {
-      tab = new Tab({ client: this });
-      this.tabs.set(tab.id, tab);
-    }
+    if (!tab) tab = new Tab({ client: this });
 
-    tabManager.add(tab);
-    tabManager.setActive(tab);
+    this.addTab(tabManager, tab);
 
     // So that the dimensions are right before we send a connection request
     await nextTick();
@@ -82,22 +78,13 @@ export class Client {
     return tab;
   }
 
-  async recreateExistingTab(tabManager, tab) {
-    // Sanity check: Client must not already be associated to a visible tab
-    console.assert((this.tab?.props.parent ?? null) === null);
-
-    console.assert(tab instanceof Tab);
-    this.tab = tab;
-
-    tabManager.add(this.tab);
-    tabManager.setActive(this.tab);
-
-    return this.tab;
+  async addTab(tabManager, tab) {
+    this.tabs.set(tab.id, tab);
+    tabManager.add(tab);
+    tabManager.setActive(tab);
   }
 
   processMessage(msg) {
-    if (msg.tabId) return this.tabs.get(msg.tabId)?.processMessage(msg);
-
     switch (msg.type) {
       default:
         console.assert(false, "Unknown message type");

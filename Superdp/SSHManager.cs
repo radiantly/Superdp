@@ -1,4 +1,5 @@
-﻿using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+﻿using System.Diagnostics;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Superdp
 {
@@ -50,7 +51,11 @@ namespace Superdp
             if (!sshControllers.TryGetValue((string)options.tabId, out var controller))
                 return;
 
-            controller.Resize(options.rows, options.cols);
+            try
+            {
+                controller.Resize(options.rows, options.cols);
+            } catch { }
+            controller.SetOwningForm(form);
         }
     }
 }

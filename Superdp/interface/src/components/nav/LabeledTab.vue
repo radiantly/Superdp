@@ -22,9 +22,7 @@ const handleMouseDown = (e) => {
 
   // If this is the only tab, then drag entire window
   if (tabManager.tabs.length === 1) {
-    interopQueen.MouseDownWindowDragWithTab(
-      JSON.stringify(props.tab.serializeMsg())
-    );
+    interopQueen.MouseDownWindowDragWithTab(props.tab.id);
     return;
   }
 };

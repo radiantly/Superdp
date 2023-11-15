@@ -1,9 +1,11 @@
-﻿using System.Text;
+﻿using Microsoft.Web.WebView2.Core;
+using System.Diagnostics;
+using System.Text;
 
 namespace Superdp
 {
     using static Native;
-    public class FormManager
+    public class FormManager : ApplicationContext
     {
         static readonly string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Superdp");
         readonly string clientConfPath = Path.Combine(dataDir, "config.json");
@@ -12,9 +14,9 @@ namespace Superdp
 
         public readonly List<HeroForm> openForms = new();
 
-        public const int newInstanceMesssage = WM_APP + 1;
+        public const int NewInstanceMesssage = WM_APP + 1;
 
-        public readonly MultiFormContext context;
+        public CoreWebView2Environment? WebView2Env { get; set; }
 
         public FormManager()
         {
@@ -28,7 +30,7 @@ namespace Superdp
                 var handle = FindWindowByCaption(IntPtr.Zero, "Superdp");
                 if (handle != IntPtr.Zero)
                 {
-                    PostMessage(handle, newInstanceMesssage, IntPtr.Zero, IntPtr.Zero);
+                    PostMessage(handle, NewInstanceMesssage, IntPtr.Zero, IntPtr.Zero);
                     Environment.Exit(0);
                     return;
                 }
@@ -38,7 +40,6 @@ namespace Superdp
 
 
             confStr = ReadStream(confStream);
-            context = new();
             CreateInstance();
         }
 
@@ -53,12 +54,17 @@ namespace Superdp
 
         public HeroForm CreateInstance()
         {
-            var form = new HeroForm(this);
+            var form = new HeroForm() { Manager = this };
 
             openForms.Add(form);
-            form.FormClosed += (sender, e) => openForms.Remove(form);
+            form.FormClosed += (sender, e) => 
+            {
+                openForms.Remove(form);
+                if (openForms.Count == 0)
+                    ExitThread();
+            };
 
-            context.AddForm(form);
+            form.Show();
             return form;
         }
 

@@ -58,15 +58,4 @@ const handleMouseMove = (e) => {
 .resize-handle:hover {
   background-color: #007acc;
 }
-
-.sidebar::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 15px;
-  height: 100%;
-  pointer-events: none;
-  background: linear-gradient(to right, transparent, #222);
-}
 </style>

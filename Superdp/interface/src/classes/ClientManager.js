@@ -2,9 +2,10 @@ import { useDebounceFn } from "@vueuse/core";
 import { ChangeManager } from "./ChangeManager";
 import { Client } from "./Client";
 import { DirEntry } from "./DirEntry";
-import { broadcast, interopQueen } from "../globals";
+import { broadcastChannel, interopQueen } from "../globals";
 import { Tab } from "./Tab";
 import { SessionManager } from "./SessionManager";
+import { broadcast } from "../utils";
 
 export class ClientManager {
   #debouncedWriteConfig;
@@ -25,18 +26,17 @@ export class ClientManager {
 
     this.#debouncedWriteConfig = useDebounceFn(() => this.#writeConfig(), 5000);
 
-    const messageHandler = (message) => this.processMessage(message);
     chrome.webview.addEventListener("message", (msg) => {
-      console.debug("> webview", msg);
-      messageHandler(msg);
+      console.debug("> wv2message", msg);
+      this.processMessage(msg);
     });
-    broadcast.addEventListener("message", (msg) => {
+    broadcastChannel.addEventListener("message", (msg) => {
       console.debug("> broadcast", msg);
-      messageHandler(msg);
+      this.processBroadcastMessage(msg);
     });
 
     window.chrome.webview.addEventListener("sharedbufferreceived", (e) => {
-      console.debug("> buffer", e);
+      console.debug("> wv2buffer", e);
       window.ev = e;
 
       if (e.additionalData?.tabId)
@@ -46,7 +46,15 @@ export class ClientManager {
     });
   }
 
+  processBroadcastMessage({ data }) {
+    const response = this.processMessage({ data });
+    if (data.replyTo) new BroadcastChannel(data.replyTo).postMessage(response);
+  }
+
   processMessage({ data }) {
+    if (data.tabId)
+      return this.session.getTab(data.tabId)?.processMessage(data);
+
     if (data.clientId)
       return this.idToClient.get(data.clientId)?.processMessage(data);
 
@@ -55,18 +63,22 @@ export class ClientManager {
         this.reconcile(data.changes);
         break;
 
-      case "TAB_ADD":
-        this.reconcile({ clients: [data.tab.client] });
-
-        // TODO: make this nicer
-        const tabManager = this.session.children[0].keys().next().value;
-        const client = this.get(data.tab.client.id);
-        const tab = new Tab({
-          client,
-          props: data.tab.props,
-          serializedLogs: data.tab.logs,
-        });
-        client.recreateExistingTab(tabManager, tab);
+      case "TAB_TRANSFER_REQUEST":
+        broadcast({ type: data.type, tabId: data.transferTabId }, true).then(
+          async ({
+            id,
+            client: serializedClient,
+            logs: serializedLogs,
+            props,
+          }) => {
+            this.reconcile({ clients: [serializedClient] });
+            const client = this.get(serializedClient.id);
+            const tabManager = this.session.children[0];
+            const tab = new Tab({ id, client, props, serializedLogs });
+            tab.update();
+            client.addTab(tabManager, tab);
+          }
+        );
         break;
 
       default:

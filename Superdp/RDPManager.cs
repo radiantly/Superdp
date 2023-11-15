@@ -9,6 +9,8 @@ namespace Superdp
 
         private readonly HeroForm form;
 
+        public IEnumerable<RDPForm> Forms { get => rdpForms.Values.Where(entry => entry.OwningForm == form); }
+
         internal RDPManager(HeroForm form)
         {
             this.form = form;

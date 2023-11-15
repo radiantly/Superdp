@@ -18,11 +18,8 @@ const handleMouseUp = (e) => {
 
 const handleMouseLeave = (e) => {
   // Create new window if tab is dragged
-  if (dragManager.props.tab instanceof Tab) {
-    const tab = dragManager.props.tab;
-    tab.props.parent.remove(tab);
-    interopQueen.CreateNewDraggedWindow(JSON.stringify(tab.serializeMsg()));
-  }
+  if (dragManager.props.tab instanceof Tab)
+    interopQueen.CreateNewDraggedWindow(dragManager.props.tab.id);
 
   dragManager.clear();
 };

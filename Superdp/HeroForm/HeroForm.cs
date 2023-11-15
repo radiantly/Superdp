@@ -10,23 +10,27 @@ namespace Superdp
     {
         public static readonly Color BackgroundColor = Color.FromArgb(30, 30, 30);
         private FormWindowState LastWindowState = FormWindowState.Minimized;
-        private readonly FormManager manager;
         private readonly long creationTime;
         private readonly InteropQueen interopQueen;
         private string? dragSerializedTab = null;
         private bool flagTabDragActive = false;
-        private readonly List<string> pendingWebMessages = new();
 
         private readonly SmoothLoadingBar bar;
         private readonly string id;
         private readonly Dictionary<string, IConnectionManager> connectionManagers;
-        public HeroForm(FormManager manager)
+
+        public required FormManager Manager { get; init; }
+
+        private bool _ready = false;
+        public event Action? InterfaceReady;
+
+        private readonly List<string> pendingWebMessages = new();
+        public HeroForm()
         {
             id = Guid.NewGuid().ToString();
             DoubleBuffered = true;
             BackColor = BackgroundColor;
             creationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            this.manager = manager;
             InitializeComponent();
             webView.Size = ClientSize;
             MaximizedBounds = Screen.FromControl(this).WorkingArea;
@@ -43,13 +47,14 @@ namespace Superdp
             interopQueen = new InteropQueen(this);
 
             Move += HeroForm_Move;
+            InterfaceReady += HeroForm_InterfaceReady;
         }
 
         private void HeroForm_Move(object? sender, EventArgs e)
         {
-            if (dragSerializedTab == null || !flagTabDragActive || manager.openForms.Count <= 1) return;
+            if (dragSerializedTab == null || !flagTabDragActive || Manager.openForms.Count <= 1) return;
 
-            foreach (HeroForm form in manager.openForms)
+            foreach (HeroForm form in Manager.openForms)
             {
                 if (form == this) continue;
 
@@ -115,6 +120,8 @@ namespace Superdp
         {
             bar.Start(() => bar.Visible = false);
             await webView.EnsureCoreWebView2Async();
+            Debug.WriteLine(webView.CoreWebView2.Environment.UserDataFolder);
+            // Manager.WebView2Env = webView.CoreWebView2.Environment;
             webView.CoreWebView2.Settings.IsWebMessageEnabled = true;
             webView.CoreWebView2.Settings.IsReputationCheckingRequired = false;
 #if DEBUG
@@ -137,39 +144,26 @@ namespace Superdp
             def.Complete();
         }
 
-        private bool _interfaceReady = false;
-        public bool InterfaceReady
+        private void HeroForm_InterfaceReady()
         {
-            get => _interfaceReady;
-            private set
-            {
-                _interfaceReady = value;
-                PostWebMessage();
-            }
-        }
-
-        public void PostWebMessage(params string[] messages)
-        {
-            pendingWebMessages.AddRange(messages);
-            if (!InterfaceReady) return;
-
-            foreach (string message in pendingWebMessages)
-            {
-                Debug.WriteLine($"Sending message: {message}");
-                webView.CoreWebView2.PostWebMessageAsJson(message);
-            }
-
+            _ready = true;
+            foreach (var message in pendingWebMessages)
+                PostWebMessage(message);
             pendingWebMessages.Clear();
         }
 
-        public void PostWebMessage(Action<dynamic> callback)
+        public void PostWebMessage(object msgObj)
         {
-            dynamic msg = new ExpandoObject();
+            string message = msgObj is string ? (string)msgObj : JsonSerializer.Serialize(msgObj);
 
-            callback(msg);
+            if (!_ready)
+            {
+                pendingWebMessages.Add(message);
+                return;
+            }
 
-            string msgStr = JsonSerializer.Serialize(msg);
-            PostWebMessage(msgStr);
+            Debug.WriteLine($"Sending message: {message}");
+            webView.CoreWebView2.PostWebMessageAsJson(message);
         }
 
         protected override void WndProc(ref Message m)
@@ -177,8 +171,8 @@ namespace Superdp
             // Debug.WriteLine(m.Msg);
             switch (m.Msg)
             {
-                case FormManager.newInstanceMesssage:
-                    manager.CreateInstance();
+                case FormManager.NewInstanceMesssage:
+                    Manager.CreateInstance();
                     break;
                 case WM_ENTERSIZEMOVE:
                     // There is a case where the user clicks the tab, so dragSerializedTab is non-null
@@ -191,7 +185,7 @@ namespace Superdp
                     dragSerializedTab = null;
                     break;
                 case WM_NCHITTEST:
-                    Debug.WriteLine("Hit test called");
+                    // Debug.WriteLine("Hit test called");
                     break;
             }
             base.WndProc(ref m);

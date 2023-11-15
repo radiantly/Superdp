@@ -1,7 +1,7 @@
 import { useDebounceFn } from "@vueuse/core";
 import { Client } from "./Client";
 import { DirEntry } from "./DirEntry";
-import { broadcast } from "../globals";
+import { broadcast } from "../utils";
 
 export class ChangeManager {
   #reportChanges;
@@ -44,6 +44,6 @@ export class ChangeManager {
     const message = this.#prepareSerializedMessage();
     this.reset();
     console.debug("< broadcast", message);
-    broadcast.postMessage(message);
+    broadcast(message);
   }
 }

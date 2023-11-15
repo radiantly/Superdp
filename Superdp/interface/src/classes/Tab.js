@@ -5,17 +5,21 @@ import { Client } from "./Client";
 import { v4 as uuidv4 } from "uuid";
 
 export class Tab {
-  constructor({ client, props = {}, serializedLogs = [] }) {
-    this.id = uuidv4();
+  constructor({
+    id = uuidv4(),
+    client,
+    props: { type = null, state = "disconnected" } = {},
+    serializedLogs = [],
+  }) {
+    this.id = id;
 
     this.client = client;
     console.assert(this.client instanceof Client);
 
     this.isActive = computed(() => this.props.parent?.props.active === this);
     this.props = shallowReactive({
-      ...props,
-      type: null,
-      state: "disconnected",
+      type,
+      state,
       parent: null,
     });
 
@@ -136,6 +140,10 @@ export class Tab {
         this.props.parent?.remove(this);
         break;
 
+      case "TAB_TRANSFER_REQUEST":
+        this.props.parent?.remove(this);
+        return this.serialize();
+
       default:
         console.assert(false, "Unknown message type");
     }
@@ -155,19 +163,12 @@ export class Tab {
 
   serialize() {
     return {
+      id: this.id,
       client: this.client.serialize(),
       logs: this.getSerializedLogs(),
       props: {
-        rdpControlVisible: this.props.rdpControlVisible,
-        ownsRDPControl: this.props.ownsRDPControl,
+        ...this.props,
       },
-    };
-  }
-
-  serializeMsg() {
-    return {
-      type: "TAB_ADD",
-      tab: this.serialize(),
     };
   }
 }

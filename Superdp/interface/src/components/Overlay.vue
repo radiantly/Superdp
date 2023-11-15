@@ -1,16 +1,13 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
 import { useWindowFocus } from "@vueuse/core";
-import { contextMenu, overlayVisible } from "../globals";
+import { clientManager, contextMenu, overlayVisible } from "../globals";
 import NavLogo from "./nav/NavLogo.vue";
 import Connections from "./side/Connections.vue";
 import ResizableSideBar from "./side/ResizableSideBar.vue";
 import { shallowReactive, watch, watchEffect } from "vue";
 import ClientEditSide from "./side/ClientEditSide.vue";
-import { ClientEntry } from "../classes/ClientEntry";
 import { Entry } from "../classes/Entry";
-import { vOnClickOutside } from "@vueuse/components";
-import { computed } from "@vue/reactivity";
 
 const hide = () => {
   overlayVisible.value = false;
@@ -21,22 +18,35 @@ const focused = useWindowFocus();
 
 watch(focused, (isFocused) => !isFocused && hide());
 
+// if we don't use a shallowRef here, the assigned entry object is proxied
+// and no longer equal to the original
 const connectionSideProps = shallowReactive({});
-const activeEntry = computed(
-  () => connectionSideProps.focusedEntry || connectionSideProps.hoveredEntry
+watchEffect(
+  () => (connectionSideProps.activeEntry = connectionSideProps.focusedEntry)
 );
+
+// Reset focused entry if the entry is deleted
+watchEffect(() => {
+  if (!connectionSideProps.activeEntry) return;
+  if (connectionSideProps.activeEntry.root === clientManager.root) return;
+  connectionSideProps.activeEntry = null;
+});
 </script>
 
 <template>
   <div class="overlay" :class="{ visible: overlayVisible }">
-    <NavLogo class="overlay-logo" />
-    <div class="overlay-contents" v-on-click-outside="hide">
+    <div class="nav-row">
+      <NavLogo class="overlay-logo" />
+      <div class="grow" @click="hide"></div>
+    </div>
+    <div class="overlay-contents">
       <ResizableSideBar>
         <Connections :side-props="connectionSideProps" />
       </ResizableSideBar>
-      <ResizableSideBar v-if="activeEntry instanceof Entry">
-        <ClientEditSide :entry="activeEntry" />
+      <ResizableSideBar v-if="connectionSideProps.activeEntry instanceof Entry">
+        <ClientEditSide :entry="connectionSideProps.activeEntry" />
       </ResizableSideBar>
+      <div class="grow" @click="hide"></div>
     </div>
   </div>
 </template>
@@ -66,10 +76,17 @@ const activeEntry = computed(
   background-color: #222;
 }
 
+.nav-row {
+  display: flex;
+}
+
+.grow {
+  flex-grow: 1;
+}
+
 .overlay-contents {
   display: flex;
   flex-grow: 1;
   gap: 1px;
-  align-self: flex-start;
 }
 </style>

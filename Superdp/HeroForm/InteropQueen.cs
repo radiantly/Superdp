@@ -11,17 +11,24 @@ namespace Superdp
         public class InteropQueen
         {
             private readonly HeroForm form;
-            public readonly long t;
 
             public InteropQueen(HeroForm form)
             {
                 this.form = form;
-                t = form.creationTime;
             }
-
-            public long GetFormCreationTimestamp()
+            public object Init()
             {
-                form.InterfaceReady = true;
+                form.InterfaceReady?.Invoke();
+
+                // If the webview is refreshed, hide all rdp forms
+                var rdpManager = (RDPManager)form.connectionManagers["rdp"];
+                foreach (var rdpForm in rdpManager.Forms)
+                    rdpForm.ShouldBeVisible = false;
+
+                foreach (var f in form.Manager.openForms)
+                    Debug.Write(f.Equals(form));
+                Debug.WriteLine("");
+
                 return form.creationTime;
             }
 
@@ -36,22 +43,25 @@ namespace Superdp
 
             public void MouseDownWindowDragWithTab(string serializedTab)
             {
-                ReleaseCapture();
-                PostMessage(form.Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
-                form.dragSerializedTab = serializedTab;
+                MouseDownWindowDrag();
+                //form.dragSerializedTab = serializedTab;
             }
             #endregion
 
-            public void CreateNewDraggedWindow(string serializedTab)
+            public void CreateNewDraggedWindow(string tabId)
             {
-                var newForm = form.manager.CreateInstance();
+                var newForm = form.Manager.CreateInstance();
                 newForm.Location = new Point(Cursor.Position.X - 50, Cursor.Position.Y - 50);
-                newForm.PostWebMessage(serializedTab);
-                newForm.interopQueen.MouseDownWindowDragWithTab(serializedTab);
+                newForm.PostWebMessage(new
+                {
+                    transferTabId = tabId,
+                    type = "TAB_TRANSFER_REQUEST"
+                });
+                newForm.interopQueen.MouseDownWindowDragWithTab(tabId);
             }
 
-            public string ReadConf() => form.manager.Conf;
-            public void WriteConf(string contents) => form.manager.Conf = contents;
+            public string ReadConf() => form.Manager.Conf;
+            public void WriteConf(string contents) => form.Manager.Conf = contents;
 
             public void Connect(string jsonString)
             {

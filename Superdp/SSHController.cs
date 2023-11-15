@@ -10,8 +10,7 @@ namespace Superdp
 
     unsafe internal class SshController : IDisposable
     {
-        //const int writeBufferSize = 10 * 1024 * 1024; // 10 MiB
-        const int writeBufferSize = 1 * 1 * 1024; //  1 kiB
+        const int writeBufferSize = 10 * 1024 * 1024; // 10 MiB
 
         // An Int32 that store how many bytes have been written
         const int sharedBufferSize = writeBufferSize + 4;
@@ -42,13 +41,27 @@ namespace Superdp
             sharedBuffer = OwningForm.webView.CoreWebView2.Environment.CreateSharedBuffer(sharedBufferSize);
             bufptr = (byte*)(sharedBuffer.Buffer.ToPointer());
 
-            dynamic additionalData = new ExpandoObject();
-            additionalData.tabId = TabId;
-            additionalData.displayBufferSize = writeBufferSize;
-            OwningForm.webView.CoreWebView2.PostSharedBufferToScript(sharedBuffer, CoreWebView2SharedBufferAccess.ReadOnly, JsonSerializer.Serialize(additionalData));
+            PostSharedBuffer();
 
             pseudoCons = PseudoConsole.Create(inputPipe.ReadSide, outputPipe.WriteSide, 40, 80);
             Task.Run(() => CopyPipeToOutput());
+        }
+
+        public void SetOwningForm(HeroForm form)
+        {
+            if (OwningForm == form) return;
+            OwningForm = form;
+            PostSharedBuffer();
+        }
+
+        private void PostSharedBuffer()
+        {
+            dynamic additionalData = new
+            {
+                tabId = TabId,
+                displayBufferSize = writeBufferSize
+            };
+            OwningForm.webView.CoreWebView2.PostSharedBufferToScript(sharedBuffer, CoreWebView2SharedBufferAccess.ReadOnly, JsonSerializer.Serialize(additionalData));
         }
 
         public void Connect(string hostname, string username)

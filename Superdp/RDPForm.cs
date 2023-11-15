@@ -58,11 +58,11 @@ namespace Superdp
 
             if (isNewTab)
             {
-                OwningForm.PostWebMessage(message =>
+                OwningForm.PostWebMessage(new
                 {
-                    message.clientId = ClientId;
-                    message.tabId = TabId;
-                    message.type = "RDP_NEWOWNER";
+                    clientId = ClientId,
+                    tabId = TabId,
+                    type = "RDP_NEWOWNER"
                 });
             }
 
@@ -213,14 +213,14 @@ namespace Superdp
 
         public void Log(string content, string? @event = null)
         {
-            OwningForm.PostWebMessage(msg =>
+            OwningForm.PostWebMessage(new
             {
-                msg.clientId = ClientId;
-                msg.tabId = TabId;
-                msg.type = "RDP_LOG";
-                msg.content = content;
-                msg.visibility = Visible;
-                if (@event != null) msg.@event = @event;
+                clientId = ClientId,
+                tabId = TabId,
+                type = "RDP_LOG",
+                content,
+                visibility = Visible,
+                @event
             });
         }
     }

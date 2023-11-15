@@ -4,9 +4,9 @@ import IconCircle from "../../icons/IconCircle.vue";
 import IconSortDown from "../../icons/IconSortDown.vue";
 import { Entry } from "../../../classes/Entry.js";
 import { DirEntry } from "../../../classes/DirEntry.js";
-import { focusedItemIdSidebarKey, tabManagerKey } from "../../../keys";
 import { clientManager, contextMenu, dragManager } from "../../../globals";
 import IconPlay from "../../icons/IconPlay.vue";
+import { ClientEntry } from "../../../classes/ClientEntry";
 const props = defineProps({
   entry: {
     type: Entry,
@@ -141,7 +141,11 @@ const handleContextMenu = (e) => {
       {{ entry.label }}
     </div>
     <div class="hover-icons">
-      <div class="icon play">
+      <div
+        class="icon play"
+        title="Connect"
+        v-show="entry instanceof ClientEntry"
+      >
         <IconPlay />
       </div>
     </div>
@@ -208,23 +212,44 @@ const handleContextMenu = (e) => {
 }
 
 .icon.play {
-  --icon-size: 20px;
-  width: var(--icon-size);
+  --icon-size: 17px;
+  width: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .icon.play > svg {
   width: var(--icon-size);
   height: var(--icon-size);
+  fill: #505050;
+}
+.icon.play:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+.icon.play:hover > svg {
+  fill: #aaa;
 }
 .hover-icons {
   position: absolute;
   top: 0;
   right: 0;
   height: 100%;
-  margin-right: 10px;
+  display: flex;
+  align-items: stretch;
   opacity: 0;
 }
-.row:hover .hover-icons {
+.row:hover .hover-icons,
+.row.active .hover-icons {
   opacity: 1;
+}
+.hover-icons::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 1px;
+  background-color: #222;
+  height: 100%;
+  left: -1px;
 }
 </style>
