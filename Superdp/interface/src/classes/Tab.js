@@ -65,7 +65,8 @@ export class Tab {
       () =>
         this.props.type === "rdp" &&
         this.props.state === "connected" &&
-        this.update()
+        this.update(),
+      { flush: "post" }
     );
 
     // rdp window resize
@@ -141,8 +142,10 @@ export class Tab {
         break;
 
       case "TAB_TRANSFER_REQUEST":
+        const serializedTab = this.serialize();
+        this.props.state = "disconnected";
         this.props.parent?.remove(this);
-        return this.serialize();
+        return serializedTab;
 
       default:
         console.assert(false, "Unknown message type");
@@ -168,6 +171,7 @@ export class Tab {
       logs: this.getSerializedLogs(),
       props: {
         ...this.props,
+        parent: null,
       },
     };
   }

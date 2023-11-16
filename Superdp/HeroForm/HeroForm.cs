@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Dynamic;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
 
@@ -8,15 +7,15 @@ namespace Superdp
     using static Native;
     public partial class HeroForm
     {
+        public string? Id { get; private set; }
         public static readonly Color BackgroundColor = Color.FromArgb(30, 30, 30);
         private FormWindowState LastWindowState = FormWindowState.Minimized;
         private readonly long creationTime;
         private readonly InteropQueen interopQueen;
-        private string? dragSerializedTab = null;
+        private string? draggedTabId = null;
         private bool flagTabDragActive = false;
 
         private readonly SmoothLoadingBar bar;
-        private readonly string id;
         private readonly Dictionary<string, IConnectionManager> connectionManagers;
 
         public required FormManager Manager { get; init; }
@@ -24,14 +23,16 @@ namespace Superdp
         private bool _ready = false;
         public event Action? InterfaceReady;
 
-        private readonly List<string> pendingWebMessages = new();
+        private readonly List<string> pendingWebMessages = [];
+        private List<Rectangle> NavAreas = [];
+        public bool CloseOnTransfer { get; private set; } = false;
         public HeroForm()
         {
-            id = Guid.NewGuid().ToString();
             DoubleBuffered = true;
             BackColor = BackgroundColor;
             creationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             InitializeComponent();
+            webView.Visible = false;
             webView.Size = ClientSize;
             MaximizedBounds = Screen.FromControl(this).WorkingArea;
 
@@ -40,8 +41,8 @@ namespace Superdp
 
             Resize += MainForm_Resize;
 
-            bar = new(Color.FromArgb(101, 101, 101), TimeSpan.FromMilliseconds(3000));
-            bar.Size = new Size(ClientSize.Width, 4);
+            bar = new(Color.FromArgb(34, 34, 34), TimeSpan.FromMilliseconds(2000));
+            bar.Size = new Size(ClientSize.Width, 35);
 
             Controls.Add(bar);
             interopQueen = new InteropQueen(this);
@@ -52,38 +53,55 @@ namespace Superdp
 
         private void HeroForm_Move(object? sender, EventArgs e)
         {
-            if (dragSerializedTab == null || !flagTabDragActive || Manager.openForms.Count <= 1) return;
+            // this is the only open form
+            if (Manager.Forms.Count <= 1)
+                return;
 
-            foreach (HeroForm form in Manager.openForms)
+            // no tab is being dragged
+            if (draggedTabId == null || !flagTabDragActive)
+                return;
+
+            // this form isn't ready
+            if (Id == null)
+                return;
+
+            var originalStyle = GetWindowLongPtr(Handle, GWL_EXSTYLE);
+            SetWindowLongPtr(Handle, GWL_EXSTYLE, originalStyle | WS_EX_TRANSPARENT | WS_EX_LAYERED);
+
+            foreach (HeroForm form in Manager.Forms)
             {
-                if (form == this) continue;
+                // skip me
+                if (form == this)
+                    continue;
 
-                if (form.IsOverTabBar(form.PointToClient(Cursor.Position)))
+                // check if over nav bar
+                if (!form.IsOverNavBar(form.PointToClient(Cursor.Position)))
+                    continue;
+                    
+                // We need to check if the form we're moving the tab is
+                // being obscured by a different window, in which case
+                // we don't move the tab
+                if (GetAncestor(WindowFromPoint(Cursor.Position), 2) != form.Handle)
+                    continue;
+
+                Debug.WriteLine($"form {form.Id} matches.");
+                
+                CloseOnTransfer = true;
+                form.PostWebMessage(new
                 {
-                    var originalStyle = GetWindowLongPtr(Handle, GWL_EXSTYLE);
-                    SetWindowLongPtr(Handle, GWL_EXSTYLE, originalStyle | WS_EX_TRANSPARENT | WS_EX_LAYERED);
+                    originatingFormId = Id,
+                    transferTabId = draggedTabId,
+                    type = "TAB_TRANSFER_REQUEST",
+                });
+                draggedTabId = null;
 
-                    // We need to check if the form we're moving the tab is
-                    // being obscured by a different window, in which case
-                    // we don't move the tab
-                    if (GetAncestor(WindowFromPoint(Cursor.Position), 2) != form.Handle)
-                    {
-                        SetWindowLongPtr(Handle, GWL_EXSTYLE, originalStyle);
-                        continue;
-                    }
-
-                    // Move tab and close current form
-                    form.PostWebMessage(dragSerializedTab);
-                    dragSerializedTab = null;
-                    // RDPManager.TransferOwnership(this, form);
-                    Close();
-
-                    break;
-                }
+                break;
             }
+
+            SetWindowLongPtr(Handle, GWL_EXSTYLE, originalStyle);
         }
 
-        public bool IsOverTabBar(Point clientPoint)
+        public bool IsOverNavBar(Point clientPoint)
         {
             // TODO: 35
             Rectangle r = new(0, 0, ClientRectangle.Width, 35);
@@ -120,8 +138,6 @@ namespace Superdp
         {
             bar.Start(() => bar.Visible = false);
             await webView.EnsureCoreWebView2Async();
-            Debug.WriteLine(webView.CoreWebView2.Environment.UserDataFolder);
-            // Manager.WebView2Env = webView.CoreWebView2.Environment;
             webView.CoreWebView2.Settings.IsWebMessageEnabled = true;
             webView.CoreWebView2.Settings.IsReputationCheckingRequired = false;
 #if DEBUG
@@ -150,6 +166,7 @@ namespace Superdp
             foreach (var message in pendingWebMessages)
                 PostWebMessage(message);
             pendingWebMessages.Clear();
+            webView.Visible = true;
         }
 
         public void PostWebMessage(object msgObj)
@@ -175,17 +192,14 @@ namespace Superdp
                     Manager.CreateInstance();
                     break;
                 case WM_ENTERSIZEMOVE:
-                    // There is a case where the user clicks the tab, so dragSerializedTab is non-null
-                    // but the window has actually not started moving. So on next move dragSerializedTab
+                    // There is a case where the user clicks the tab, so draggedTabId is non-null
+                    // but the window has actually not started moving. So on next move draggedTabId
                     // is mistakenly used. flagTabDragActive fixes this.
-                    if (dragSerializedTab != null) flagTabDragActive = true;
+                    if (draggedTabId != null) flagTabDragActive = true;
                     break;
                 case WM_EXITSIZEMOVE:
                     flagTabDragActive = false;
-                    dragSerializedTab = null;
-                    break;
-                case WM_NCHITTEST:
-                    // Debug.WriteLine("Hit test called");
+                    draggedTabId = null;
                     break;
             }
             base.WndProc(ref m);

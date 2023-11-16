@@ -144,6 +144,7 @@ const handleContextMenu = (e) => {
       <div
         class="icon play"
         title="Connect"
+        @click="props.entry.client.createTab(clientManager.session.children[0])"
         v-show="entry instanceof ClientEntry"
       >
         <IconPlay />

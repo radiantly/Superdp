@@ -8,8 +8,10 @@ export const broadcastChannel = new BroadcastChannel("everybody");
 
 export const interopQueen = new Proxy(chrome.webview.hostObjects.interopQueen, {
   get(queen, key) {
-    console.debug("<", key);
-    return queen[key];
+    return (...args) => {
+      console.debug("<", key, args);
+      return queen[key](...args);
+    };
   },
 });
 

@@ -19,7 +19,7 @@ provide(tabManagerKey, props.tabManager);
 const workAreaElem = ref(null);
 
 useResizeObserver(workAreaElem, () =>
-  props.tabManager.setSize(workAreaElem.value.getBoundingClientRect())
+  props.tabManager.setWorkAreaSize(workAreaElem.value.getBoundingClientRect())
 );
 </script>
 

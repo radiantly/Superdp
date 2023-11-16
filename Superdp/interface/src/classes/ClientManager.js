@@ -5,11 +5,13 @@ import { DirEntry } from "./DirEntry";
 import { broadcastChannel, interopQueen } from "../globals";
 import { Tab } from "./Tab";
 import { SessionManager } from "./SessionManager";
-import { broadcast } from "../utils";
+import { broadcast, broadcastMessageLog, postMessageTo } from "../utils";
+import { v4 as uuidv4 } from "uuid";
 
 export class ClientManager {
   #debouncedWriteConfig;
   constructor(conf) {
+    this.id = uuidv4();
     this.changes = new ChangeManager();
     this.idToClient = new Map();
     this.dirEntries = new Map();
@@ -30,10 +32,14 @@ export class ClientManager {
       console.debug("> wv2message", msg);
       this.processMessage(msg);
     });
-    broadcastChannel.addEventListener("message", (msg) => {
-      console.debug("> broadcast", msg);
-      this.processBroadcastMessage(msg);
-    });
+    broadcastChannel.addEventListener(
+      "message",
+      broadcastMessageLog((msg) => this.processBroadcastMessage(msg))
+    );
+    new BroadcastChannel(this.id).addEventListener(
+      "message",
+      broadcastMessageLog((msg) => this.processBroadcastMessage(msg))
+    );
 
     window.chrome.webview.addEventListener("sharedbufferreceived", (e) => {
       console.debug("> wv2buffer", e);
@@ -48,7 +54,7 @@ export class ClientManager {
 
   processBroadcastMessage({ data }) {
     const response = this.processMessage({ data });
-    if (data.replyTo) new BroadcastChannel(data.replyTo).postMessage(response);
+    if (data.replyTo) broadcast(response, new BroadcastChannel(data.replyTo));
   }
 
   processMessage({ data }) {
@@ -64,7 +70,11 @@ export class ClientManager {
         break;
 
       case "TAB_TRANSFER_REQUEST":
-        broadcast({ type: data.type, tabId: data.transferTabId }, true).then(
+        postMessageTo(
+          { type: data.type, tabId: data.transferTabId },
+          data.originatingFormId,
+          true
+        ).then(
           async ({
             id,
             client: serializedClient,
@@ -75,7 +85,6 @@ export class ClientManager {
             const client = this.get(serializedClient.id);
             const tabManager = this.session.children[0];
             const tab = new Tab({ id, client, props, serializedLogs });
-            tab.update();
             client.addTab(tabManager, tab);
           }
         );

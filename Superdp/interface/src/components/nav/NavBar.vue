@@ -2,10 +2,11 @@
 import { tabManagerKey } from "../../keys";
 import LabeledTab from "./LabeledTab.vue";
 import NewTab from "./NewTab.vue";
-import { inject } from "vue";
+import { inject, ref } from "vue";
 import { TabManager } from "../../classes/TabManager.js";
 import { overlayVisible, interopQueen, contextMenu } from "../../globals";
 import NavLogo from "./NavLogo.vue";
+import { useResizeObserver } from "@vueuse/core";
 
 /** @type {TabManager} */
 const tabManager = inject(tabManagerKey);
@@ -45,11 +46,17 @@ const handleMouseEnter = (e) => {
   // if (tabManager.props.active === TabManager.NEW_TAB) return;
   overlayVisible.value = true;
 };
+
+const navElem = ref(null);
+useResizeObserver(navElem, () =>
+  tabManager.setNavSize(navElem.value.getBoundingClientRect())
+);
 </script>
 
 <template>
   <div
     class="nav"
+    ref="navElem"
     @mousedown.prevent.stop="handleMouseDown"
     @contextmenu.prevent
   >

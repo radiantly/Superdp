@@ -43,7 +43,6 @@ export class ChangeManager {
   #broadcast() {
     const message = this.#prepareSerializedMessage();
     this.reset();
-    console.debug("< broadcast", message);
     broadcast(message);
   }
 }

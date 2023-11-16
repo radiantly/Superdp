@@ -51,10 +51,7 @@ namespace Superdp
             if (!sshControllers.TryGetValue((string)options.tabId, out var controller))
                 return;
 
-            try
-            {
-                controller.Resize(options.rows, options.cols);
-            } catch { }
+            controller.Resize(options.rows, options.cols);
             controller.SetOwningForm(form);
         }
     }

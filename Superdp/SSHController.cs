@@ -50,8 +50,13 @@ namespace Superdp
         public void SetOwningForm(HeroForm form)
         {
             if (OwningForm == form) return;
+            var srcForm = OwningForm;
+
             OwningForm = form;
             PostSharedBuffer();
+            
+            if (srcForm.CloseOnTransfer)
+                srcForm.Close();
         }
 
         private void PostSharedBuffer()

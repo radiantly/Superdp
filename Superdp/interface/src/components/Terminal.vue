@@ -1,7 +1,7 @@
 <script setup>
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { Tab } from "../classes/Tab";
 import { useRafFn, useResizeObserver } from "@vueuse/core";
 import { interopQueen } from "../globals";
@@ -15,9 +15,8 @@ const props = defineProps({
 
 const divElem = ref(null);
 
-const terminal = new Terminal();
-const fitAddon = new FitAddon();
-terminal.loadAddon(fitAddon);
+let terminal;
+let fitAddon;
 
 let readTill = 0;
 useRafFn(() => {
@@ -42,8 +41,13 @@ useResizeObserver(divElem, () => {
 });
 
 onMounted(() => {
+  terminal = new Terminal();
+  fitAddon = new FitAddon();
+  terminal.loadAddon(fitAddon);
+
   terminal.open(divElem.value);
-  setTimeout(() => fitAddon.fit(), 0);
+  fitAddon.fit();
+
   terminal.onData((data) => interopQueen.SSHInput(props.tab.id, data));
   terminal.attachCustomKeyEventHandler((arg) => {
     if (arg.ctrlKey && arg.code === "KeyC" && arg.type === "keydown") {

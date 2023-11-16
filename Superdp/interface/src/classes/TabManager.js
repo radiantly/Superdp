@@ -13,12 +13,23 @@ export class TabManager {
         width: 0,
         height: 0,
       },
+      navSize: {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+      },
       active: null,
     });
   }
 
-  setSize({ x, y, width, height }) {
+  setWorkAreaSize({ x, y, width, height }) {
     this.props.workAreaSize = { x, y, width, height };
+  }
+
+  setNavSize({ x, y, width, height }) {
+    console.log({ width });
+    this.props.navSize = { x, y, width, height };
   }
 
   setActive(tab) {

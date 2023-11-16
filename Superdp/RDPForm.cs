@@ -66,6 +66,7 @@ namespace Superdp
                 });
             }
 
+            var srcForm = OwningForm;
             OwningForm = newForm;
             TabId = tabId;
 
@@ -73,6 +74,9 @@ namespace Superdp
             {
                 OwningForm.Controls.Add(this);
                 OwningForm.EnsureWebViewPositioning();
+
+                if (srcForm.CloseOnTransfer)
+                    srcForm.Close();
             }
         }
 

@@ -16,8 +16,9 @@ namespace Superdp
             {
                 this.form = form;
             }
-            public object Init()
+            public object Init(string id)
             {
+                form.Id = id;
                 form.InterfaceReady?.Invoke();
 
                 // If the webview is refreshed, hide all rdp forms
@@ -25,15 +26,8 @@ namespace Superdp
                 foreach (var rdpForm in rdpManager.Forms)
                     rdpForm.ShouldBeVisible = false;
 
-                foreach (var f in form.Manager.openForms)
-                    Debug.Write(f.Equals(form));
-                Debug.WriteLine("");
-
                 return form.creationTime;
             }
-
-            #region TitleBarActions
-            // https://github.com/MicrosoftEdge/WebView2Feedback/issues/200
 
             public void MouseDownWindowDrag()
             {
@@ -41,19 +35,19 @@ namespace Superdp
                 PostMessage(form.Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
             }
 
-            public void MouseDownWindowDragWithTab(string serializedTab)
+            public void MouseDownWindowDragWithTab(string tabId)
             {
                 MouseDownWindowDrag();
-                //form.dragSerializedTab = serializedTab;
+                form.draggedTabId = tabId;
             }
-            #endregion
 
             public void CreateNewDraggedWindow(string tabId)
             {
                 var newForm = form.Manager.CreateInstance();
-                newForm.Location = new Point(Cursor.Position.X - 50, Cursor.Position.Y - 50);
+                newForm.Location = new Point(Cursor.Position.X - 75, Cursor.Position.Y - 50);
                 newForm.PostWebMessage(new
                 {
+                    originatingFormId = form.Id,
                     transferTabId = tabId,
                     type = "TAB_TRANSFER_REQUEST"
                 });
@@ -84,6 +78,17 @@ namespace Superdp
 
             public void SSHInput(string tabId, string text) =>
                 ((SSHManager)form.connectionManagers["ssh"]).Input(tabId, text);
+
+            
+            public void UpdateNavAreas(string[] rects)
+            {
+                Debug.WriteLine(rects);
+                var r = rects.ToList().ConvertAll(jsonString =>
+                {
+                    dynamic obj = new DynJson(jsonString);
+                    return new Rectangle(obj.x, obj.y, obj.width, obj.height);
+                });
+            }
 
             public void BringWebViewToFront()
             {

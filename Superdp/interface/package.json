@@ -2,6 +2,7 @@
   "name": "interface",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -20,6 +21,6 @@
     "@vitejs/plugin-vue": "^4.0.0",
     "eslint": "^8.42.0",
     "eslint-plugin-vue": "^9.14.1",
-    "vite": "^4.1.4"
+    "vite": "^5.0.0"
   }
 }

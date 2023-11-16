@@ -12,11 +12,9 @@ namespace Superdp
         readonly FileStream confStream;
         string confStr;
 
-        public readonly List<HeroForm> openForms = new();
+        public readonly List<HeroForm> Forms = [];
 
         public const int NewInstanceMesssage = WM_APP + 1;
-
-        public CoreWebView2Environment? WebView2Env { get; set; }
 
         public FormManager()
         {
@@ -45,7 +43,7 @@ namespace Superdp
 
         public void BroadcastWebMessage(string arg, HeroForm skip)
         {
-            foreach (HeroForm form in openForms)
+            foreach (HeroForm form in Forms)
             {
                 if (form == skip) continue;
                 form.PostWebMessage(arg);
@@ -56,11 +54,11 @@ namespace Superdp
         {
             var form = new HeroForm() { Manager = this };
 
-            openForms.Add(form);
+            Forms.Add(form);
             form.FormClosed += (sender, e) => 
             {
-                openForms.Remove(form);
-                if (openForms.Count == 0)
+                Forms.Remove(form);
+                if (Forms.Count == 0)
                     ExitThread();
             };
 

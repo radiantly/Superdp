@@ -1,4 +1,4 @@
-import { broadcastChannel } from "./globals";
+import { broadcastChannel, clientManager } from "./globals";
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -16,19 +16,34 @@ export const runAsync = (func) => new Promise((resolve) => resolve(func()));
 export const sleep = (seconds) =>
   new Promise((resolve) => setTimeout(resolve, seconds));
 
-export const broadcast = (message, requestResponse = false) =>
+export const broadcastMessageLog = (handler) => {
+  return (event) => {
+    console.debug(`> broadcast.${event.target.name.substring(0, 5)}`, event);
+    handler(event);
+  };
+};
+
+export const broadcast = (message, channel = broadcastChannel) => {
+  message.from = clientManager.id;
+  console.debug(`< broadcast.${channel.name.substring(0, 5)}`, message);
+  channel.postMessage(message);
+};
+
+export const postMessageTo = (message, to, requestResponse = false) =>
   new Promise((resolve) => {
+    const receiverChannel = new BroadcastChannel(to);
+
     if (!requestResponse) {
-      broadcastChannel.postMessage(message);
+      broadcast(message, receiverChannel);
       return resolve();
     }
 
     message.replyTo = uuidv4();
     const channel = new BroadcastChannel(message.replyTo);
-    const handler = ({ data }) => {
+    const handler = broadcastMessageLog((event) => {
       channel.removeEventListener("message", handler);
-      resolve(data);
-    };
+      resolve(event.data);
+    });
     channel.addEventListener("message", handler);
-    broadcastChannel.postMessage(message);
+    broadcast(message, receiverChannel);
   });
