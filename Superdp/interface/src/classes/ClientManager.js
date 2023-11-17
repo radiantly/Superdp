@@ -85,6 +85,7 @@ export class ClientManager {
             const client = this.get(serializedClient.id);
             const tabManager = this.session.children[0];
             const tab = new Tab({ id, client, props, serializedLogs });
+            tab.transfer();
             client.addTab(tabManager, tab);
           }
         );

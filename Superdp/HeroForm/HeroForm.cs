@@ -101,12 +101,8 @@ namespace Superdp
             SetWindowLongPtr(Handle, GWL_EXSTYLE, originalStyle);
         }
 
-        public bool IsOverNavBar(Point clientPoint)
-        {
-            // TODO: 35
-            Rectangle r = new(0, 0, ClientRectangle.Width, 35);
-            return r.Contains(clientPoint);
-        }
+        public bool IsOverNavBar(Point clientPoint) =>
+            NavAreas.Any(r => r.Contains(clientPoint));
 
         private bool webViewInBackground = true;
         public void EnsureWebViewPositioning()
@@ -136,7 +132,7 @@ namespace Superdp
 
         private async void MainForm_Load(object sender, EventArgs e)
         {
-            bar.Start(() => bar.Visible = false);
+            bar.Start();
             await webView.EnsureCoreWebView2Async();
             webView.CoreWebView2.Settings.IsWebMessageEnabled = true;
             webView.CoreWebView2.Settings.IsReputationCheckingRequired = false;
@@ -167,6 +163,7 @@ namespace Superdp
                 PostWebMessage(message);
             pendingWebMessages.Clear();
             webView.Visible = true;
+            bar.Visible = false;
         }
 
         public void PostWebMessage(object msgObj)

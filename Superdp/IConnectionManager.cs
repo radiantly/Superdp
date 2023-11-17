@@ -8,52 +8,54 @@ namespace Superdp
     {
         private readonly JsonNode? root;
 
-        internal DynJson(JsonNode node)
+        private DynJson(JsonNode? node)
         {
             root = node;
         }
 
-        internal DynJson(string jsonString)
+        public static dynamic? Parse(string jsonString)
         {
-            root = JsonSerializer.Deserialize<JsonNode>(jsonString);
+            var node = JsonSerializer.Deserialize<JsonNode>(jsonString);
+            return Parse(node);
+        }
+
+        private static dynamic? Parse(JsonNode? node)
+        {
+            if (node is JsonObject jObj)
+                return new DynJson(jObj);
+
+            if (node is JsonArray jArr)
+                return jArr.Select(nd => new DynJson(nd)).ToArray();
+
+            if (node is JsonValue jValue)
+            {
+                switch (jValue.GetValue<JsonElement>().ValueKind)
+                {
+                    case JsonValueKind.String:
+                        return jValue.GetValue<string>();
+                    case JsonValueKind.Number:
+                        return jValue.GetValue<int>();
+                    case JsonValueKind.True:
+                        return true;
+                    case JsonValueKind.False:
+                        return false;
+                    case JsonValueKind.Null:
+                        return null;
+                }
+            }
+
+            return null;
         }
 
         public override bool TryGetMember(GetMemberBinder binder, out object? result)
         {
-            if (root != null)
-            {
-                var node = root[binder.Name];
-                if (node is JsonObject jObj)
-                {
-                    result = new DynJson(jObj);
-                    return true;
-                }
-
-                if (node is JsonValue jValue)
-                {
-                    switch (jValue.GetValue<JsonElement>().ValueKind)
-                    {
-                        case JsonValueKind.String:
-                            result = jValue.GetValue<string>();
-                            return true;
-                        case JsonValueKind.Number:
-                            result = jValue.GetValue<int>();
-                            return true;
-                        case JsonValueKind.True:
-                            result = true;
-                            return true;
-                        case JsonValueKind.False:
-                            result = false;
-                            return true;
-                        case JsonValueKind.Null:
-                            result = null;
-                            return true;
-                    }
-                }
-            }
-
             result = null;
-            return false;
+
+            if (binder?.Name == null || root?[binder.Name] == null)
+                return false;
+
+            result = Parse(root[binder.Name]);
+            return true;
         }
     }
     public interface IConnectionManager
@@ -61,5 +63,6 @@ namespace Superdp
         public void Connect(dynamic options);
         public void Disconnect(dynamic options);
         public void Update(dynamic options);
+        public void Transfer(dynamic options);
     }
 }

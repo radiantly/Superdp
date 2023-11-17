@@ -44,7 +44,6 @@ namespace Superdp
                 Disconnect(options);
             }
 
-            Debug.WriteLine("Instantiating...");
             var rdpForm = new RDPForm(form)
             {
                 ClientId = options.clientId,
@@ -54,7 +53,6 @@ namespace Superdp
                 ShouldBeVisible = options.visible,
                 ConnectionParams = want
             };
-            Debug.WriteLine("Instantiation complete...");
             rdpForms.Add(options.clientId, rdpForm);
             rdpForm.OnDisconnect += () =>
             {
@@ -76,10 +74,17 @@ namespace Superdp
             if (!rdpForms.TryGetValue((string)options.clientId, out var rdpForm))
                 return;
             
-            rdpForm.SetOwningForm(form, options.tabId);
             rdpForm.Location = new Point(options.x, options.y);
             rdpForm.Size = new Size(options.width, options.height);
             rdpForm.ShouldBeVisible = options.visible;
+        }
+
+        public void Transfer(dynamic options)
+        {
+            if (!rdpForms.TryGetValue((string)options.clientId, out var rdpForm))
+                return;
+
+            rdpForm.SetOwningForm(form, options.tabId);
         }
     }
 }

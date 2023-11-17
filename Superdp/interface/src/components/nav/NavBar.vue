@@ -12,12 +12,7 @@ import { useResizeObserver } from "@vueuse/core";
 const tabManager = inject(tabManagerKey);
 
 const handleMouseDown = (e) => {
-  console.log("Posting message", e.button);
   if (e.button === 0) interopQueen.MouseDownWindowDrag();
-
-  // TODO: Handle context menu
-  // else if (e.button === 2)
-  //   chrome.webview.hostObjects.sync.interopQueen.TitlebarRightClick();
 };
 
 const handleTabClose = (...tabs) => {
@@ -28,7 +23,21 @@ const handleTabClose = (...tabs) => {
 };
 
 const handleContextMenu = (e, tab) => {
-  const menuItems = [
+  const menuItems = [];
+
+  if (tab.props.state === "disconnected")
+    menuItems.push({
+      label: "Connect",
+      handler: () => tab.Connect(),
+    });
+
+  if (tab.props.type === "ssh")
+    menuItems.push({
+      label: "Duplicate",
+      handler: () => tab.client.createTab(tabManager),
+    });
+
+  menuItems.push(
     {
       label: "Close",
       handler: () => handleTabClose(tab),
@@ -36,8 +45,8 @@ const handleContextMenu = (e, tab) => {
     {
       label: "Close all tabs",
       handler: () => handleTabClose(...tabManager.tabs),
-    },
-  ];
+    }
+  );
 
   contextMenu.show(e, menuItems);
 };
@@ -54,12 +63,7 @@ useResizeObserver(navElem, () =>
 </script>
 
 <template>
-  <div
-    class="nav"
-    ref="navElem"
-    @mousedown.prevent.stop="handleMouseDown"
-    @contextmenu.prevent
-  >
+  <div class="nav" ref="navElem">
     <div class="tabs">
       <NavLogo @mouseenter.passive="handleMouseEnter" />
       <LabeledTab
@@ -74,6 +78,7 @@ useResizeObserver(navElem, () =>
         @mousedown.stop="() => tabManager.setActive(TabManager.NEW_TAB)"
       />
     </div>
+    <div class="spacer" @mousedown.passive="handleMouseDown"></div>
   </div>
 </template>
 <style scoped>
@@ -87,5 +92,8 @@ useResizeObserver(navElem, () =>
   flex-wrap: wrap;
   gap: 1px;
   min-width: 0;
+}
+.nav > .spacer {
+  flex-grow: 1;
 }
 </style>

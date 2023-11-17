@@ -29,7 +29,13 @@ const actionBtnText = computed(() =>
 </script>
 <template>
   <div class="page-stack">
-    <Terminal v-show="tab.props.type === 'ssh'" class="terminal" :tab="tab" />
+    <Terminal
+      class="terminal"
+      v-if="tab.props.buffer"
+      :buffer="tab.props.buffer"
+      @resize="(rows, cols) => props.tab.setTerminalSize(rows, cols)"
+      @input="(data) => props.tab.sshInput(props.tab.id, data)"
+    />
     <div
       class="page-container"
       :class="{ visible: tab.props.state !== 'connected' }"

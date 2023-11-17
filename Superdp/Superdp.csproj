@@ -8,7 +8,6 @@
     <BaseOutputPath>$(SolutionDir)bin\</BaseOutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <Platforms>AnyCPU;x64</Platforms>
-    <BaseIntermediateOutputPath>$(SolutionDir)obj\</BaseIntermediateOutputPath>
     <ApplicationIcon>interface\public\favicon.ico</ApplicationIcon>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationManifest>app.manifest</ApplicationManifest>

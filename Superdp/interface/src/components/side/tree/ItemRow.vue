@@ -239,6 +239,7 @@ const handleContextMenu = (e) => {
   display: flex;
   align-items: stretch;
   opacity: 0;
+  background: inherit;
 }
 .row:hover .hover-icons,
 .row.active .hover-icons {

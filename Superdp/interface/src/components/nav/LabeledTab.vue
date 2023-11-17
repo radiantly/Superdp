@@ -1,8 +1,6 @@
 <script setup>
-import { inject } from "vue";
 import { Tab } from "../../classes/Tab";
 import { dragManager, interopQueen } from "../../globals";
-import { tabManagerKey } from "../../keys";
 import IconCross from "../icons/IconCross.vue";
 import NavBarItem from "./NavBarItem.vue";
 const props = defineProps({
@@ -14,17 +12,15 @@ const props = defineProps({
 
 defineEmits(["close"]);
 
-const tabManager = inject(tabManagerKey);
+const tabManager = props.tab.props.parent;
 
 const handleMouseDown = (e) => {
   if (e.button !== 0) return; // ignore if not primary mouse button
   tabManager.setActive(props.tab);
 
   // If this is the only tab, then drag entire window
-  if (tabManager.tabs.length === 1) {
+  if (tabManager.tabs.length === 1)
     interopQueen.MouseDownWindowDragWithTab(props.tab.id);
-    return;
-  }
 };
 
 const handleMouseLeave = (e) => {
@@ -40,8 +36,8 @@ const handleMouseLeave = (e) => {
   <NavBarItem
     class="labeled-tab"
     :class="{ active: tab.isActive.value }"
-    @mousedown.stop="handleMouseDown"
-    @mouseleave="handleMouseLeave"
+    @mousedown.passive="handleMouseDown"
+    @mouseleave.passive="handleMouseLeave"
   >
     <div class="text">{{ tab.client.label.value }}</div>
     <div class="close" @mousedown.stop="$emit('close')">

@@ -20,11 +20,9 @@ namespace Superdp
             totalDuration = duration;
         }
 
-        private Action? completionCallback = null;
-        public void Start(Action onComplete)
+        public void Start()
         {
             timer = Stopwatch.StartNew();
-            completionCallback = onComplete;
             Invalidate();
         }
 
@@ -47,14 +45,7 @@ namespace Superdp
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             e.Graphics.FillRectangle(brush, 0, 0, currentDrawnWidth, Size.Height);
             if (currentDrawnWidth < Size.Width)
-            {
                 Invalidate();
-            }
-            else if (completionCallback != null)
-            {
-                completionCallback();
-                completionCallback = null;
-            }
         }
     }
 }

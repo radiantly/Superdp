@@ -27,16 +27,29 @@ useResizeObserver(workAreaElem, () =>
   <NavBar />
   <div ref="workAreaElem" class="workArea">
     <template v-for="tab of tabManager.tabs" :key="tab.client.id">
-      <ConnectionPage v-show="tab.isActive.value" :tab="tab" />
+      <ConnectionPage :class="{ hidden: !tab.isActive.value }" :tab="tab" />
     </template>
-    <NewTabPage v-show="tabManager.props.active === null" />
+    <NewTabPage :class="{ hidden: tabManager.props.active !== null }" />
   </div>
 </template>
 
 <style scoped>
 .workArea {
   flex-grow: 1;
-  display: flex;
   min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.workArea > * {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.hidden {
+  visibility: hidden;
 }
 </style>

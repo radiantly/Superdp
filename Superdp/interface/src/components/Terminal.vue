@@ -7,11 +7,13 @@ import { useRafFn, useResizeObserver } from "@vueuse/core";
 import { interopQueen } from "../globals";
 
 const props = defineProps({
-  tab: {
-    type: Tab,
+  buffer: {
+    type: Object,
     required: true,
   },
 });
+
+const emit = defineEmits(["resize", "input"]);
 
 const divElem = ref(null);
 
@@ -19,26 +21,6 @@ let terminal;
 let fitAddon;
 
 let readTill = 0;
-useRafFn(() => {
-  if (props.tab.displayBuffer === null) return;
-
-  const writtenTill = props.tab.sizeBuffer[0];
-
-  if (readTill == writtenTill) return;
-  if (readTill == props.tab.displayBuffer.length) readTill = 0;
-  const till =
-    readTill < writtenTill ? writtenTill : props.tab.displayBuffer.length;
-
-  terminal.write(props.tab.displayBuffer.subarray(readTill, till));
-
-  readTill = till;
-});
-
-useResizeObserver(divElem, () => {
-  if (!props.tab.isActive.value || props.tab.props.type !== "ssh") return;
-  fitAddon.fit();
-  props.tab.resizeTerminal(terminal.rows, terminal.cols);
-});
 
 onMounted(() => {
   terminal = new Terminal();
@@ -48,7 +30,7 @@ onMounted(() => {
   terminal.open(divElem.value);
   fitAddon.fit();
 
-  terminal.onData((data) => interopQueen.SSHInput(props.tab.id, data));
+  terminal.onData((data) => emit("input", data));
   terminal.attachCustomKeyEventHandler((arg) => {
     if (arg.ctrlKey && arg.code === "KeyC" && arg.type === "keydown") {
       const selection = terminal.getSelection();
@@ -58,18 +40,31 @@ onMounted(() => {
         return false;
       }
     } else if (arg.ctrlKey && arg.code === "KeyV" && arg.type === "keydown") {
-      navigator.clipboard
-        .readText()
-        .then((text) => interopQueen.SSHInput(props.tab.id, text));
+      navigator.clipboard.readText().then((text) => emit("input", text));
     }
     return true;
   });
 });
 
-onBeforeUnmount(() => {
-  console.log("Disposing terminal from tab", props.tab.id);
-  terminal.dispose();
+useRafFn(() => {
+  const writtenTill = props.buffer.size[0];
+
+  if (readTill == writtenTill) return;
+  if (readTill == props.buffer.display.length) readTill = 0;
+  const till =
+    readTill < writtenTill ? writtenTill : props.buffer.display.length;
+
+  terminal.write(props.buffer.display.subarray(readTill, till));
+
+  readTill = till;
 });
+
+useResizeObserver(divElem, () => {
+  fitAddon.fit();
+  emit("resize", terminal.rows, terminal.cols);
+});
+
+onBeforeUnmount(() => terminal.dispose());
 </script>
 
 <template>

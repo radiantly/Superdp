@@ -60,34 +60,37 @@ namespace Superdp
             public void Connect(string jsonString)
             {
                 Debug.WriteLine("Connection Request");
-                dynamic options = new DynJson(jsonString);
-                form.connectionManagers[options.type].Connect(options);
+                dynamic? options = DynJson.Parse(jsonString);
+                form.connectionManagers[options?.type].Connect(options);
             }
 
             public void Disconnect(string jsonString)
             {
-                dynamic options = new DynJson(jsonString);
-                form.connectionManagers[options.type].Disconnect(options);
+                dynamic? options = DynJson.Parse(jsonString);
+                form.connectionManagers[options?.type].Disconnect(options);
             }
 
             public void Update(string jsonString)
             {
-                dynamic options = new DynJson(jsonString);
-                form.connectionManagers[options.type].Update(options);
+                dynamic? options = DynJson.Parse(jsonString);
+                form.connectionManagers[options?.type].Update(options);
+            }
+
+            public void Transfer(string jsonString)
+            {
+                dynamic? options = DynJson.Parse(jsonString);
+                form.connectionManagers[options?.type].Transfer(options);
             }
 
             public void SSHInput(string tabId, string text) =>
                 ((SSHManager)form.connectionManagers["ssh"]).Input(tabId, text);
 
-            
-            public void UpdateNavAreas(string[] rects)
+            public void UpdateNavAreas(string jsonString)
             {
-                Debug.WriteLine(rects);
-                var r = rects.ToList().ConvertAll(jsonString =>
-                {
-                    dynamic obj = new DynJson(jsonString);
-                    return new Rectangle(obj.x, obj.y, obj.width, obj.height);
-                });
+                dynamic[]? conv = DynJson.Parse(jsonString);
+                form.NavAreas = conv?.ToList()?.ConvertAll(obj =>
+                    new Rectangle(obj.x, obj.y, obj.width, obj.height)
+                ) ?? [];
             }
 
             public void BringWebViewToFront()

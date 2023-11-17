@@ -20,6 +20,7 @@ export class Tab {
     this.props = shallowReactive({
       type,
       state,
+      buffer: null,
       parent: null,
     });
 
@@ -53,9 +54,6 @@ export class Tab {
 
       visible: this.isActive.value,
     }));
-
-    this.displayBuffer = null;
-    this.sizeBuffer = null;
 
     const debounceParams = { debounce: 222, maxWait: 555 };
 
@@ -112,17 +110,25 @@ export class Tab {
   }
 
   async disconnect() {
-    this.props.state = "disconnecting";
     return await interopQueen.Disconnect(
       JSON.stringify(this.connectionOptions.value)
     );
   }
 
   async update() {
-    console.log(this.connectionOptions.value);
     return await interopQueen.Update(
       JSON.stringify(this.connectionOptions.value)
     );
+  }
+
+  async transfer() {
+    return await interopQueen.Transfer(
+      JSON.stringify(this.connectionOptions.value)
+    );
+  }
+
+  async sshInput(data) {
+    return await interopQueen.SSHInput(data);
   }
 
   processMessage(msg) {
@@ -155,11 +161,13 @@ export class Tab {
   processSharedBuffer(e) {
     const displayBufferSize = e.additionalData.displayBufferSize;
     const buffer = e.getBuffer();
-    this.displayBuffer = new Uint8Array(buffer, 0, displayBufferSize);
-    this.sizeBuffer = new Uint32Array(buffer, displayBufferSize, 1);
+    this.props.buffer = {
+      display: new Uint8Array(buffer, 0, displayBufferSize),
+      size: new Int32Array(buffer, displayBufferSize, 1),
+    };
   }
 
-  resizeTerminal(rows, cols) {
+  setTerminalSize(rows, cols) {
     this.props.rows = rows;
     this.props.cols = cols;
   }
@@ -171,6 +179,7 @@ export class Tab {
       logs: this.getSerializedLogs(),
       props: {
         ...this.props,
+        buffer: null,
         parent: null,
       },
     };

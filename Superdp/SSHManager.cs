@@ -52,6 +52,13 @@ namespace Superdp
                 return;
 
             controller.Resize(options.rows, options.cols);
+        }
+
+        public void Transfer(dynamic options)
+        {
+            if (!sshControllers.TryGetValue((string)options.tabId, out var controller))
+                return;
+
             controller.SetOwningForm(form);
         }
     }

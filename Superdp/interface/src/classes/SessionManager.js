@@ -8,12 +8,14 @@ export class SessionManager {
   constructor() {
     this.children = [new TabManager()];
 
-    this.navAreas = computed(() =>
-      this.children.map((tabManager) => tabManager.props.navSize)
+    watchDebounced(
+      computed(() =>
+        this.children.map((tabManager) =>
+          tabManager.props.navSize
+        )
+      ),
+      (areas) => interopQueen.UpdateNavAreas(JSON.stringify(areas))
     );
-    // watchDebounced(this.navAreas, () =>
-    //   interopQueen.UpdateNavAreas(this.navAreas.value)
-    // );
   }
 
   getTab(tabId) {
