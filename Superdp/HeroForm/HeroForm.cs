@@ -168,6 +168,13 @@ namespace Superdp
 
         public void PostWebMessage(object msgObj)
         {
+            // Messages can only be sent from the UI thread
+            if (InvokeRequired)
+            {
+                Invoke(() => PostWebMessage(msgObj));
+                return;
+            }
+
             string message = msgObj is string ? (string)msgObj : JsonSerializer.Serialize(msgObj);
 
             if (!_ready)

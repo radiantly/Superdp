@@ -128,12 +128,12 @@ export class Tab {
   }
 
   async sshInput(data) {
-    return await interopQueen.SSHInput(data);
+    return await interopQueen.SSHInput(this.id, data);
   }
 
   processMessage(msg) {
     switch (msg.type) {
-      case "RDP_LOG":
+      case "TAB_LOG":
         const { content, event } = msg;
 
         if (event === "disconnect") this.props.state = "disconnected";
@@ -159,9 +159,14 @@ export class Tab {
   }
 
   processSharedBuffer(e) {
+    // release old buffer if it exists
+    if (this.props.buffer?.raw)
+      chrome.webview.releaseBuffer(this.props.buffer.raw);
+
     const displayBufferSize = e.additionalData.displayBufferSize;
     const buffer = e.getBuffer();
     this.props.buffer = {
+      raw: buffer,
       display: new Uint8Array(buffer, 0, displayBufferSize),
       size: new Int32Array(buffer, displayBufferSize, 1),
     };

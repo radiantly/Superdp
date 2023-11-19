@@ -1,4 +1,5 @@
-﻿using System.Dynamic;
+﻿using System.Diagnostics;
+using System.Dynamic;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
@@ -28,6 +29,8 @@ namespace Superdp
         readonly byte* bufptr;
 
         public string TabId { get; private set; }
+        
+        public event Action? Disconnect;
 
 
         public SshController(HeroForm owningForm, string tabId)
@@ -54,7 +57,7 @@ namespace Superdp
 
             OwningForm = form;
             PostSharedBuffer();
-            
+
             if (srcForm.CloseOnTransfer)
                 srcForm.Close();
         }
@@ -72,7 +75,14 @@ namespace Superdp
         public void Connect(string hostname, string username)
         {
             string hostString = string.IsNullOrEmpty(username) ? hostname : $"{username}@{hostname}";
-            sshProc = ProcessFactory.Start($"ssh -A {hostString}", PseudoConsole.PseudoConsoleThreadAttribute, pseudoCons.Handle);
+            sshProc = new Process($"ssh -o StrictHostKeyChecking=no -A {hostString}", PseudoConsole.PseudoConsoleThreadAttribute, pseudoCons.Handle);
+            sshProc.Exited += SshProc_Exited;
+        }
+
+        private void SshProc_Exited()
+        {
+            OwningForm.PostWebMessage(new { tabId = TabId, type = "TAB_LOG", content = "Session has disconnected", @event = "disconnect" });
+            Disconnect?.Invoke();
         }
 
         public void Input(string text)
@@ -141,88 +151,33 @@ namespace Superdp
     /// </summary>
     internal sealed class Process : IDisposable
     {
-        public Process(STARTUPINFOEX startupInfo, PROCESS_INFORMATION processInfo)
+        private readonly STARTUPINFOEX startupInfo;
+        private readonly PROCESS_INFORMATION processInfo;
+
+        public IntPtr Handle { get => processInfo.hProcess; }
+        public uint ExitCode
         {
-            StartupInfo = startupInfo;
-            ProcessInfo = processInfo;
-        }
-
-        public STARTUPINFOEX StartupInfo { get; }
-        public PROCESS_INFORMATION ProcessInfo { get; }
-
-        public bool Terminate() => TerminateProcess(ProcessInfo.hProcess, 0);
-
-        #region IDisposable Support
-
-        private bool disposedValue = false; // To detect redundant calls
-
-        void Dispose(bool disposing)
-        {
-            if (!disposedValue)
+            get
             {
-                if (disposing)
-                {
-                    // dispose managed state (managed objects).
-                }
-
-                // dispose unmanaged state
-
-                // Free the attribute list
-                if (StartupInfo.lpAttributeList != IntPtr.Zero)
-                {
-                    DeleteProcThreadAttributeList(StartupInfo.lpAttributeList);
-                    Marshal.FreeHGlobal(StartupInfo.lpAttributeList);
-                }
-
-                // Close process and thread handles
-                if (ProcessInfo.hProcess != IntPtr.Zero)
-                {
-                    CloseHandle(ProcessInfo.hProcess);
-                }
-                if (ProcessInfo.hThread != IntPtr.Zero)
-                {
-                    CloseHandle(ProcessInfo.hThread);
-                }
-
-                disposedValue = true;
+                if (!GetExitCodeProcess(Handle, out var code))
+                    throw new InvalidOperationException("Failed to get exit code for process. " + Marshal.GetLastWin32Error());
+                return code;
             }
         }
-
-        ~Process()
+        public bool HasExited { get => ExitCode != STILL_ACTIVE; }
+        public event Action? Exited;
+        public Process(string command, IntPtr attributes, IntPtr pseudoConsoleHandle)
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(false);
+            startupInfo = ConfigureProcessThread(pseudoConsoleHandle, attributes);
+            processInfo = RunProcess(ref startupInfo, command);
+            Task.Run(() =>
+            {
+                if (WaitForSingleObject(Handle, INFINITE) == WAIT_OBJECT_0)
+                    Exited?.Invoke();
+            });
         }
 
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // use the following line if the finalizer is overridden above.
-            GC.SuppressFinalize(this);
-        }
-
-        #endregion
-    }
-
-    /// <summary>
-    /// Support for starting and configuring processes.
-    /// </summary>
-    /// <remarks>
-    /// Possible to replace with managed code? The key is being able to provide the PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE attribute
-    /// </remarks>
-    static class ProcessFactory
-    {
-        /// <summary>
-        /// Start and configure a process. The return value represents the process and should be disposed.
-        /// </summary>
-        internal static Process Start(string command, IntPtr attributes, IntPtr hPC)
-        {
-            var startupInfo = ConfigureProcessThread(hPC, attributes);
-            var processInfo = RunProcess(ref startupInfo, command);
-            return new Process(startupInfo, processInfo);
-        }
+        public bool Terminate() => TerminateProcess(processInfo.hProcess, 0);
 
         private static STARTUPINFOEX ConfigureProcessThread(IntPtr hPC, IntPtr attributes)
         {
@@ -236,9 +191,7 @@ namespace Superdp
                 lpSize: ref lpSize
             );
             if (success || lpSize == IntPtr.Zero) // we're not expecting `success` here, we just want to get the calculated lpSize
-            {
                 throw new InvalidOperationException("Could not calculate the number of bytes for the attribute list. " + Marshal.GetLastWin32Error());
-            }
 
             var startupInfo = new STARTUPINFOEX();
             startupInfo.StartupInfo.cb = Marshal.SizeOf<STARTUPINFOEX>();
@@ -251,9 +204,7 @@ namespace Superdp
                 lpSize: ref lpSize
             );
             if (!success)
-            {
                 throw new InvalidOperationException("Could not set up attribute list. " + Marshal.GetLastWin32Error());
-            }
 
             success = UpdateProcThreadAttribute(
                 lpAttributeList: startupInfo.lpAttributeList,
@@ -265,13 +216,10 @@ namespace Superdp
                 lpReturnSize: IntPtr.Zero
             );
             if (!success)
-            {
                 throw new InvalidOperationException("Could not set pseudoconsole thread attribute. " + Marshal.GetLastWin32Error());
-            }
 
             return startupInfo;
         }
-
         private static PROCESS_INFORMATION RunProcess(ref STARTUPINFOEX sInfoEx, string commandLine)
         {
             int securityAttributeSize = Marshal.SizeOf<SECURITY_ATTRIBUTES>();
@@ -296,7 +244,61 @@ namespace Superdp
 
             return pInfo;
         }
+
+        #region IDisposable Support
+
+        private bool disposedValue = false; // To detect redundant calls
+
+        void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // dispose managed state (managed objects).
+                }
+
+                // dispose unmanaged state
+
+                // Free the attribute list
+                if (startupInfo.lpAttributeList != IntPtr.Zero)
+                {
+                    DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
+                    Marshal.FreeHGlobal(startupInfo.lpAttributeList);
+                }
+
+                // Close process and thread handles
+                if (processInfo.hProcess != IntPtr.Zero)
+                {
+                    CloseHandle(processInfo.hProcess);
+                }
+                if (processInfo.hThread != IntPtr.Zero)
+                {
+                    CloseHandle(processInfo.hThread);
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        ~Process()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(false);
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // use the following line if the finalizer is overridden above.
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion
     }
+
 
     /// <summary>
     /// Utility functions around the new Pseudo Console APIs
@@ -314,7 +316,7 @@ namespace Superdp
 
         internal static PseudoConsole Create(SafeFileHandle inputReadSide, SafeFileHandle outputWriteSide, int rows, int cols)
         {
-            var createResult = CreatePseudoConsole(new COORD { X = (short)cols, Y = (short)rows }, inputReadSide, outputWriteSide, 0, out IntPtr hPC);
+            var createResult = CreatePseudoConsole(new COORD { X = (short)cols, Y = (short)rows }, inputReadSide, outputWriteSide, PSEUDOCONSOLE_INHERIT_CURSOR, out IntPtr hPC);
             if (createResult != 0)
                 throw new InvalidOperationException("Could not create pseudo console. Error Code " + createResult);
             return new PseudoConsole(hPC);

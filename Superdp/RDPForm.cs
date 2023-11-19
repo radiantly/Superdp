@@ -221,9 +221,8 @@ namespace Superdp
             {
                 clientId = ClientId,
                 tabId = TabId,
-                type = "RDP_LOG",
+                type = "TAB_LOG",
                 content,
-                visibility = Visible,
                 @event
             });
         }

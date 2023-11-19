@@ -34,7 +34,7 @@ const actionBtnText = computed(() =>
       v-if="tab.props.buffer"
       :buffer="tab.props.buffer"
       @resize="(rows, cols) => props.tab.setTerminalSize(rows, cols)"
-      @input="(data) => props.tab.sshInput(props.tab.id, data)"
+      @input="(data) => props.tab.sshInput(data)"
     />
     <div
       class="page-container"

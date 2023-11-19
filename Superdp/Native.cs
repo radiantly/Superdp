@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Security;
 using Microsoft.Win32.SafeHandles;
 
 namespace Superdp
@@ -158,14 +159,27 @@ namespace Superdp
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool TerminateProcess(IntPtr hProcess, uint uExitCode);
 
+        internal static uint STILL_ACTIVE = 259;
         [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool GetExitCodeProcess(IntPtr hProcess, out uint lpExitCode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [SuppressUnmanagedCodeSecurity]
+        [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool CloseHandle(IntPtr hObject);
+
+        internal const uint INFINITE = 0xFFFFFFFF;
+        internal const uint WAIT_OBJECT_0 = 0;
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern UInt32 WaitForSingleObject(IntPtr hHandle, UInt32 dwMilliseconds);
 
         #endregion
 
         #region PseudoConsole
 
         internal const uint PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
+        internal const uint PSEUDOCONSOLE_INHERIT_CURSOR = 1;
 
         [StructLayout(LayoutKind.Sequential)]
         internal struct COORD

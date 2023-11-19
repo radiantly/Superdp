@@ -28,8 +28,12 @@ namespace Superdp
 
         public void Connect(dynamic options)
         {
-            if (!sshControllers.ContainsKey(options.tabId))
-                sshControllers.Add(options.tabId, new SshController(form, options.tabId));
+            string tabId = options.tabId;
+            if (!sshControllers.ContainsKey(tabId))
+            {
+                sshControllers.Add(tabId, new SshController(form, options.tabId));
+                sshControllers[tabId].Disconnect += () => sshControllers.Remove(tabId);
+            }
 
             sshControllers[options.tabId].Connect(options.client.host, options.client.username);
         }

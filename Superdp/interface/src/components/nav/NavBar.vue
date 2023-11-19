@@ -28,7 +28,7 @@ const handleContextMenu = (e, tab) => {
   if (tab.props.state === "disconnected")
     menuItems.push({
       label: "Connect",
-      handler: () => tab.Connect(),
+      handler: () => tab.connect(),
     });
 
   if (tab.props.type === "ssh")
