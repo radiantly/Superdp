@@ -23,7 +23,13 @@ let fitAddon;
 let readTill = 0;
 
 onMounted(() => {
-  terminal = new Terminal();
+  terminal = new Terminal({
+    theme: {
+      background: "#1e1e1e",
+    },
+    fontFamily:
+      'ui-monospace, Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", "Oxygen Mono", "Ubuntu Monospace", "Source Code Pro", "Fira Code", "Droid Sans Mono", "Courier New", monospace',
+  });
   fitAddon = new FitAddon();
   terminal.loadAddon(fitAddon);
 

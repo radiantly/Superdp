@@ -155,12 +155,14 @@ const handleContextMenu = (e) => {
 
 <style scoped>
 .row {
+  --row-bg: transparent;
   display: flex;
   height: 22px;
   align-items: center;
   cursor: pointer;
   position: relative;
   flex-shrink: 0;
+  background: var(--row-bg);
 }
 
 .row > * {
@@ -168,11 +170,11 @@ const handleContextMenu = (e) => {
 }
 
 .row:hover {
-  background-color: #282828;
+  --row-bg: #282828;
 }
 
 .row.active {
-  background-color: #303030;
+  --row-bg: #303030;
 }
 
 .row .label {
@@ -241,17 +243,16 @@ const handleContextMenu = (e) => {
   opacity: 0;
   background: inherit;
 }
-.row:hover .hover-icons,
-.row.active .hover-icons {
+.row:hover .hover-icons {
   opacity: 1;
 }
 .hover-icons::before {
   content: "";
   position: absolute;
   top: 0;
-  width: 1px;
-  background-color: #222;
+  width: 15px;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0), var(--row-bg));
   height: 100%;
-  left: -1px;
+  right: 100%;
 }
 </style>

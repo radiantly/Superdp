@@ -5,7 +5,13 @@ import { clientManager, contextMenu, overlayVisible } from "../globals";
 import NavLogo from "./nav/NavLogo.vue";
 import Connections from "./side/Connections.vue";
 import ResizableSideBar from "./side/ResizableSideBar.vue";
-import { shallowReactive, watch, watchEffect } from "vue";
+import {
+  onBeforeUnmount,
+  onMounted,
+  shallowReactive,
+  watch,
+  watchEffect,
+} from "vue";
 import ClientEditSide from "./side/ClientEditSide.vue";
 import { Entry } from "../classes/Entry";
 
@@ -30,6 +36,27 @@ watchEffect(() => {
   if (!connectionSideProps.activeEntry) return;
   if (connectionSideProps.activeEntry.root === clientManager.root) return;
   connectionSideProps.activeEntry = null;
+});
+
+const handleKeyDown = (e) => {
+  console.log(e);
+  if (e.key === "Escape") {
+    if (overlayVisible.value) {
+      hide();
+      e.preventDefault();
+    } else if (e.shiftKey) {
+      overlayVisible.value = true;
+      e.preventDefault();
+    }
+  }
+};
+
+onMounted(() => {
+  document.body.addEventListener("keydown", handleKeyDown);
+});
+
+onBeforeUnmount(() => {
+  document.body.removeEventListener("keydown", handleKeyDown);
 });
 </script>
 
