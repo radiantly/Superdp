@@ -18,6 +18,7 @@ export const interopQueen = new Proxy(chrome.webview.hostObjects.interopQueen, {
 export const dragManager = new DragManager();
 
 export const overlayVisible = ref(false);
+export const windowIsMaximized = ref(false);
 
 const conf = JSON.parse((await interopQueen.ReadConf()) || "{}");
 export const clientManager = new ClientManager(conf);

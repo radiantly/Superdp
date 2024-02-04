@@ -9,8 +9,7 @@ namespace Superdp
     {
         public string? Id { get; private set; }
         public static readonly Color BackgroundColor = Color.FromArgb(30, 30, 30);
-        private FormWindowState LastWindowState = FormWindowState.Minimized;
-        private readonly long creationTime;
+        private readonly long CreationTime;
         private readonly InteropQueen interopQueen;
         private string? draggedTabId = null;
         private bool flagTabDragActive = false;
@@ -30,7 +29,7 @@ namespace Superdp
         {
             DoubleBuffered = true;
             BackColor = BackgroundColor;
-            creationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            CreationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             InitializeComponent();
             webView.Visible = false;
             webView.Size = ClientSize;
@@ -111,22 +110,34 @@ namespace Superdp
             else webView.BringToFront();
         }
 
+        private bool flagUpdatingBorderStyle = false;
+        private void NotifyFormBorderStyleChange() =>
+            PostWebMessage(new
+            {
+                type = "FORMBORDERSTYLE_CHANGE",
+                formBorderStyle = FormBorderStyle
+            });
         private void MainForm_Resize(object? sender, EventArgs e)
         {
-            if (WindowState != LastWindowState)
+            if (flagUpdatingBorderStyle) return;
+            
+
+            if (WindowState == FormWindowState.Maximized && FormBorderStyle == FormBorderStyle.Sizable)
             {
-                LastWindowState = WindowState;
-                if (WindowState == FormWindowState.Maximized && FormBorderStyle != FormBorderStyle.None)
-                {
-                    // We can't directly set FormBorderStyle to None because it messes up the ClientSize
-                    WindowState = FormWindowState.Normal;
-                    FormBorderStyle = FormBorderStyle.None;
-                    WindowState = FormWindowState.Maximized;
-                }
-                else if (WindowState == FormWindowState.Normal && FormBorderStyle != FormBorderStyle.Sizable)
-                {
-                    FormBorderStyle = FormBorderStyle.Sizable;
-                }
+                flagUpdatingBorderStyle = true;
+
+                // We can't directly set FormBorderStyle to None because it messes up the ClientSize
+                WindowState = FormWindowState.Normal;
+                FormBorderStyle = FormBorderStyle.None;
+                WindowState = FormWindowState.Maximized;
+
+                NotifyFormBorderStyleChange();
+                flagUpdatingBorderStyle = false;
+            }
+            else if (WindowState == FormWindowState.Normal && FormBorderStyle == FormBorderStyle.None)
+            {
+                FormBorderStyle = FormBorderStyle.Sizable;
+                NotifyFormBorderStyleChange();
             }
         }
 

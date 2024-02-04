@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 
 namespace Superdp
 {
@@ -26,7 +27,11 @@ namespace Superdp
                 foreach (var rdpForm in rdpManager.Forms)
                     rdpForm.ShouldBeVisible = false;
 
-                return form.creationTime;
+                return JsonSerializer.Serialize(new
+                {
+                    creationTimestamp = form.CreationTime,
+                    formBorderStyle = form.FormBorderStyle
+                });
             }
 
             public void MouseDownWindowDrag()
@@ -91,6 +96,16 @@ namespace Superdp
                 form.NavAreas = conv?.ToList()?.ConvertAll(obj =>
                     new Rectangle(obj.x, obj.y, obj.width, obj.height)
                 ) ?? [];
+            }
+
+            public void Minimize()
+            {
+                form.WindowState = FormWindowState.Minimized;
+            }
+
+            public void Restore()
+            {
+                form.WindowState = FormWindowState.Normal;
             }
 
             public void BringWebViewToFront()

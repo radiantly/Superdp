@@ -1,7 +1,10 @@
-import { clientManager, interopQueen } from "./globals";
+import { clientManager, interopQueen, windowIsMaximized } from "./globals";
 
 export const provideData = async () => {
-  const creationTimestamp = await interopQueen.Init(clientManager.id);
+  const { creationTimestamp, formBorderStyle } = JSON.parse(
+    await interopQueen.Init(clientManager.id)
+  );
   const elapsedTime = Date.now() - creationTimestamp;
-  console.log(`Startup took ${elapsedTime}ms`);
+  console.log(`Startup took ${elapsedTime}ms`, formBorderStyle);
+  windowIsMaximized.value = formBorderStyle == 0;
 };

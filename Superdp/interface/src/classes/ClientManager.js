@@ -2,7 +2,7 @@ import { useDebounceFn } from "@vueuse/core";
 import { ChangeManager } from "./ChangeManager";
 import { Client } from "./Client";
 import { DirEntry } from "./DirEntry";
-import { broadcastChannel, interopQueen } from "../globals";
+import { broadcastChannel, interopQueen, windowIsMaximized } from "../globals";
 import { Tab } from "./Tab";
 import { SessionManager } from "./SessionManager";
 import { broadcast, broadcastMessageLog, postMessageTo } from "../utils";
@@ -65,6 +65,10 @@ export class ClientManager {
       return this.idToClient.get(data.clientId)?.processMessage(data);
 
     switch (data.type) {
+      case "FORMBORDERSTYLE_CHANGE":
+        windowIsMaximized.value = data.formBorderStyle == 0;
+        break;
+
       case "RECONCILE":
         this.reconcile(data.changes);
         break;
