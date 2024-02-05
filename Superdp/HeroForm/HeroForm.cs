@@ -14,7 +14,6 @@ namespace Superdp
         private string? draggedTabId = null;
         private bool flagTabDragActive = false;
 
-        private readonly SmoothLoadingBar bar;
         private readonly Dictionary<string, IConnectionManager> connectionManagers;
 
         public required FormManager Manager { get; init; }
@@ -25,6 +24,7 @@ namespace Superdp
         private readonly List<string> pendingWebMessages = [];
         private List<Rectangle> NavAreas = [];
         public bool CloseOnTransfer { get; private set; } = false;
+        public bool Hydrated { get; private set; } = false;
         public HeroForm()
         {
             DoubleBuffered = true;
@@ -40,14 +40,30 @@ namespace Superdp
 
             Resize += MainForm_Resize;
 
-            bar = new(Color.FromArgb(34, 34, 34), TimeSpan.FromMilliseconds(2000));
-            bar.Size = new Size(ClientSize.Width, 35);
-
-            Controls.Add(bar);
             interopQueen = new InteropQueen(this);
 
             Move += HeroForm_Move;
             InterfaceReady += HeroForm_InterfaceReady;
+
+            // Invisible by default
+            ShowInTaskbar = false;
+            WindowState = FormWindowState.Minimized;
+            FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            Opacity = 0;
+        }
+
+        public void Hydrate()
+        {
+            Hydrated = true;
+            if (_ready) PerformHydration();
+        }
+        
+        private void PerformHydration()
+        {
+            ShowInTaskbar = true;
+            FormBorderStyle = FormBorderStyle.Sizable;
+            WindowState = FormWindowState.Normal;
+            Opacity = 1;
         }
 
         private void HeroForm_Move(object? sender, EventArgs e)
@@ -143,7 +159,6 @@ namespace Superdp
 
         private async void MainForm_Load(object sender, EventArgs e)
         {
-            bar.Start();
             await webView.EnsureCoreWebView2Async();
             webView.CoreWebView2.Settings.IsWebMessageEnabled = true;
             webView.CoreWebView2.Settings.IsReputationCheckingRequired = false;
@@ -174,7 +189,7 @@ namespace Superdp
                 PostWebMessage(message);
             pendingWebMessages.Clear();
             webView.Visible = true;
-            bar.Visible = false;
+            if (Hydrated) PerformHydration();
         }
 
         public void PostWebMessage(object msgObj)

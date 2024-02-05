@@ -73,6 +73,26 @@ export class ClientManager {
         this.reconcile(data.changes);
         break;
 
+      /**
+       * Let's say I want to move a tab from one window to another. How does
+       * it work?
+       * When the user starts to drag a tab, we take note of this. Then, when
+       * the user leaves the window dragging the tab, we call
+       * interopQueen.CreateNewDraggedWindow() with the tab id.
+       * This then creates a new window and sends a TAB_TRANSFER_REQUEST that
+       * gets handled below.
+       * The code below then uses a broadcast channel to send the same
+       * request, but this time specifically to the tab (find the handler in
+       * Tab.js)
+       * That handler then returns a serialized version of the tab that
+       * contains the various properties that can be used to create the tab.
+       *
+       * Now moving this tab with the newly created window does basically the
+       * same thing, except that we set a CloseOnTransfer flag on the new form
+       * and when the rdp/ssh backend transfers, it closes.
+       * TODO: Change this so that it is not dependent on the specific
+       * connection backend
+       */
       case "TAB_TRANSFER_REQUEST":
         postMessageTo(
           { type: data.type, tabId: data.transferTabId },
