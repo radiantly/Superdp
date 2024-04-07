@@ -25,26 +25,24 @@ defineProps({
 <style scoped>
 .select-wrap {
   display: flex;
-  gap: 10px;
+  background-color: var(--da-gray);
+  align-self: flex-start;
 }
 
 .option {
-  border: 1px solid #303030;
-  color: #aaa;
-  padding: 5px 10px;
+  color: var(--lightest-gray);
+  padding: 5px 15px;
   border-radius: 1px;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.option.active {
-  color: #ccc;
-  border: 1px solid transparent;
-  background-color: #303030;
+  transition: color 0.2s ease, background-color 0.2s ease;
 }
 
 .option:hover {
-  color: #ccc;
-  background-color: #383838;
+  background-color: var(--gray);
+}
+
+.option.active {
+  color: var(--lightest);
+  background-color: var(--striking-blue);
 }
 </style>

@@ -1,15 +1,17 @@
 <script setup>
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
-import { ref, onMounted, onBeforeUnmount, nextTick } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import { Tab } from "../classes/Tab";
 import { useRafFn, useResizeObserver } from "@vueuse/core";
-import { interopQueen } from "../globals";
 
 const props = defineProps({
+  tab: {
+    type: Tab,
+    required: true,
+  },
   buffer: {
     type: Object,
-    required: true,
   },
 });
 
@@ -22,10 +24,19 @@ let fitAddon;
 
 let readTill = 0;
 
+const focusTerminal = () => terminal?.focus();
+
 onMounted(() => {
   terminal = new Terminal({
     theme: {
-      background: "#1e1e1e",
+      background: "#2e3440",
+      red: "#bf616a",
+      green: "#a3be8c",
+      yellow: "#ebcb8b",
+      blue: "#5e81ac",
+      magenta: "#b48ead",
+      cyan: "#88c0d0",
+      white: "#eceff4",
     },
     fontFamily:
       'ui-monospace, Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", "Oxygen Mono", "Ubuntu Monospace", "Source Code Pro", "Fira Code", "Droid Sans Mono", "Courier New", monospace',
@@ -50,9 +61,12 @@ onMounted(() => {
     }
     return true;
   });
+
+  props.tab.addEventListener("focus", focusTerminal);
 });
 
 useRafFn(() => {
+  if (props.buffer === null) return;
   const writtenTill = props.buffer.size[0];
 
   if (readTill == writtenTill) return;
@@ -70,18 +84,26 @@ useResizeObserver(divElem, () => {
   emit("resize", terminal.rows, terminal.cols);
 });
 
-onBeforeUnmount(() => terminal.dispose());
+onBeforeUnmount(() => {
+  props.tab.removeEventListener("focus", focusTerminal);
+  terminal.dispose();
+});
 </script>
 
 <template>
   <div class="term" ref="divElem"></div>
 </template>
 
-<style>
+<style scoped>
 .term {
-  background-color: red;
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background-color: var(--dark-gray);
+}
+.term :deep(.xterm) {
+  /* there may be extra space left at the bottom (not enough space for a line),
+  and there is extra space on the right because of the scrollbar */
+  padding: 12px 8px 6px 18px;
 }
 </style>

@@ -5,8 +5,7 @@ import IconSortDown from "../../icons/IconSortDown.vue";
 import { Entry } from "../../../classes/Entry.js";
 import { DirEntry } from "../../../classes/DirEntry.js";
 import { clientManager, contextMenu, dragManager } from "../../../globals";
-import IconPlay from "../../icons/IconPlay.vue";
-import { ClientEntry } from "../../../classes/ClientEntry";
+
 const props = defineProps({
   entry: {
     type: Entry,
@@ -24,8 +23,6 @@ const sideProps = inject("sideProps");
 
 const chosenIcon = props.entry.isDir() ? "collapse" : "circle";
 const handleMouseDown = (e) => {
-  // mark active
-  console.log(props.entry.root);
   sideProps.focusedEntry = props.entry;
 };
 
@@ -95,6 +92,7 @@ const handleContextMenu = (e) => {
     leaf: [
       {
         label: "Connect",
+        disabled: !props.entry.client.valid.value,
         handler: () =>
           props.entry.client.createTab(clientManager.session.children[0]),
       },
@@ -140,29 +138,21 @@ const handleContextMenu = (e) => {
     <div class="label">
       {{ entry.label }}
     </div>
-    <div class="hover-icons">
-      <div
-        class="icon play"
-        title="Connect"
-        @click="props.entry.client.createTab(clientManager.session.children[0])"
-        v-show="entry instanceof ClientEntry"
-      >
-        <IconPlay />
-      </div>
-    </div>
   </div>
 </template>
 
 <style scoped>
 .row {
-  --row-bg: transparent;
+  --bg-color: transparent;
+  --text-color: var(--light);
   display: flex;
   height: 22px;
   align-items: center;
   cursor: pointer;
   position: relative;
   flex-shrink: 0;
-  background: var(--row-bg);
+  background: var(--bg-color);
+  color: var(--text-color);
 }
 
 .row > * {
@@ -170,11 +160,12 @@ const handleContextMenu = (e) => {
 }
 
 .row:hover {
-  --row-bg: #282828;
+  --bg-color: var(--da-gray);
 }
 
 .row.active {
-  --row-bg: #303030;
+  --bg-color: var(--gray);
+  --text-color: var(--lightest);
 }
 
 .row .label {
@@ -186,7 +177,7 @@ const handleContextMenu = (e) => {
 }
 
 .icon {
-  fill: #444;
+  fill: var(--light-gray);
   width: 13px;
   display: flex;
 }
@@ -212,47 +203,5 @@ const handleContextMenu = (e) => {
 
 .collapsed > .icon.collapse > svg {
   transform: rotate(-90deg);
-}
-
-.icon.play {
-  --icon-size: 17px;
-  width: 30px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.icon.play > svg {
-  width: var(--icon-size);
-  height: var(--icon-size);
-  fill: #505050;
-}
-.icon.play:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-.icon.play:hover > svg {
-  fill: #aaa;
-}
-.hover-icons {
-  position: absolute;
-  top: 0;
-  right: 0;
-  height: 100%;
-  display: flex;
-  align-items: stretch;
-  opacity: 0;
-  background: inherit;
-}
-.row:hover .hover-icons {
-  opacity: 1;
-}
-.hover-icons::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  width: 15px;
-  background-image: linear-gradient(to right, rgba(0, 0, 0, 0), var(--row-bg));
-  height: 100%;
-  right: 100%;
 }
 </style>

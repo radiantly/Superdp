@@ -3,7 +3,7 @@ import { ref } from "vue";
 import CapturableDiv from "../CapturableDiv.vue";
 
 // Handle resizing of sidebar
-const width = ref(300);
+const width = defineModel("width", { default: 300 });
 const sidebar = ref(null);
 
 let offsetLeft = 0;
@@ -20,7 +20,9 @@ const handleMouseMove = (e) => {
 
 <template>
   <div class="sidebar" ref="sidebar">
-    <slot></slot>
+    <div class="sidebar-children">
+      <slot></slot>
+    </div>
     <CapturableDiv
       class="resize-handle"
       draggable="false"
@@ -37,25 +39,30 @@ const handleMouseMove = (e) => {
   min-width: 10vw;
   width: v-bind("width + 'px'");
   max-width: 50vw;
-  background-color: #222;
-  position: relative;
+  background-color: var(--dark-gray);
+
+  display: flex;
+  align-items: stretch;
+}
+
+.sidebar-children {
+  flex-grow: 1;
+
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
 .resize-handle {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 3px;
-  height: 100%;
+  width: 4px;
   cursor: ew-resize;
-  transition: background-color 0.25s ease;
-  z-index: 13;
+
+  border-right: 1px solid var(--gray);
+  transition: background-color 0.2s ease, border-right-color 0.2s ease;
 }
 
 .resize-handle:hover {
-  background-color: #007acc;
+  background-color: var(--striking-blue);
+  border-right-color: var(--striking-blue);
 }
 </style>

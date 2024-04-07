@@ -35,6 +35,7 @@ provide("validDrop", validDrag);
     class="tree"
     :class="{ 'drag-active': validDrag }"
     :tree="clientManager.root"
+    @click.self="() => (sideProps.focusedEntry = null)"
   />
 </template>
 

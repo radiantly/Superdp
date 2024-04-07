@@ -4,13 +4,14 @@ import { interopQueen } from "../globals";
 import { Client } from "./Client";
 import { v4 as uuidv4 } from "uuid";
 
-export class Tab {
+export class Tab extends EventTarget {
   constructor({
     id = uuidv4(),
     client,
     props: { type = null, state = "disconnected" } = {},
     serializedLogs = [],
   }) {
+    super();
     this.id = id;
 
     this.client = client;
@@ -32,13 +33,13 @@ export class Tab {
     );
 
     this.dimensions = computed(() => {
-      if (this.props.type === "rdp")
-        return this.props.parent?.props.workAreaSize;
+      if (this.props.type === "rdp" && this.props.parent?.props.workAreaSize)
+        return this.props.parent.props.workAreaSize;
 
-      if (this.props.type === "ssh")
+      if (this.props.type === "ssh" && this.props.rows && this.props.cols)
         return { rows: this.props.rows, cols: this.props.cols };
 
-      return {};
+      return null;
     });
 
     this.connectionOptions = computed(() => ({
@@ -50,42 +51,30 @@ export class Tab {
         ...this.client.props,
       },
 
-      ...this.dimensions.value,
+      ...(this.dimensions.value ?? {}),
 
       visible: this.isActive.value,
     }));
 
     const debounceParams = { debounce: 222, maxWait: 555 };
 
-    // rdp window show/hide
+    // tab show/hide
     watch(
       this.isActive,
-      () =>
-        this.props.type === "rdp" &&
-        this.props.state === "connected" &&
-        this.update(),
+      (isActive) => {
+        if (this.props.state?.startsWith("connect")) this.update();
+        if (isActive) this.dispatchEvent(new Event("focus"));
+      },
       { flush: "post" }
     );
 
-    // rdp window resize
+    // window resize
     watchDebounced(
       this.dimensions,
       () =>
         this.isActive.value &&
-        this.props.type === "rdp" &&
         this.props.state === "connected" &&
         this.update(),
-      debounceParams
-    );
-
-    // ssh terminal resize
-    watchDebounced(
-      () => [this.props.rows, this.props.cols],
-      () => {
-        console.log(this.props.rows, this.props.cols);
-        if (!this.isActive.value || this.props.type !== "ssh") return;
-        this.update();
-      },
       debounceParams
     );
   }
@@ -102,14 +91,27 @@ export class Tab {
   }
 
   async connect() {
+    if (this.props.state == "disconnected" || this.props.type === null)
+      this.props.type = this.client.props.type;
     this.props.state = "connecting";
-    if (this.props.type === null) this.props.type = this.client.props.type;
+
+    // Wait for dimensions before sending connect request
+    if (this.dimensions.value === null) {
+      await new Promise((resolve) =>
+        watch(this.dimensions, () => resolve(), {
+          once: true,
+        })
+      );
+    }
+
     return await interopQueen.Connect(
       JSON.stringify(this.connectionOptions.value)
     );
   }
 
   async disconnect() {
+    if (this.props.state === "disconnected") return;
+    this.props.state = "disconnecting";
     return await interopQueen.Disconnect(
       JSON.stringify(this.connectionOptions.value)
     );
@@ -128,6 +130,7 @@ export class Tab {
   }
 
   async sshInput(data) {
+    if (this.props.state !== "connected") return;
     return await interopQueen.SSHInput(this.id, data);
   }
 
@@ -136,9 +139,12 @@ export class Tab {
       case "TAB_LOG":
         const { content, event } = msg;
 
-        if (event === "disconnect") this.props.state = "disconnected";
-        else if (event === "connect") this.props.state = "connected";
-
+        if (event === "disconnect") {
+          this.props.state = "disconnected";
+        } else if (event === "connect") {
+          this.props.state = "connected";
+          this.dispatchEvent(new Event("focus"));
+        }
         this.log(content);
         break;
 

@@ -30,10 +30,10 @@ namespace Superdp
 
         public string TabId { get; private set; }
         
-        public event Action? Disconnect;
+        public event Action? OnDisconnect;
 
 
-        public SshController(HeroForm owningForm, string tabId)
+        public SshController(HeroForm owningForm, string tabId, int rows, int cols)
         {
             OwningForm = owningForm;
             TabId = tabId;
@@ -46,7 +46,7 @@ namespace Superdp
 
             PostSharedBuffer();
 
-            pseudoCons = PseudoConsole.Create(inputPipe.ReadSide, outputPipe.WriteSide, 40, 80);
+            pseudoCons = PseudoConsole.Create(inputPipe.ReadSide, outputPipe.WriteSide, rows, cols);
             Task.Run(() => CopyPipeToOutput());
         }
 
@@ -72,17 +72,34 @@ namespace Superdp
             OwningForm.webView.CoreWebView2.PostSharedBufferToScript(sharedBuffer, CoreWebView2SharedBufferAccess.ReadOnly, JsonSerializer.Serialize(additionalData));
         }
 
-        public void Connect(string hostname, string username)
+        private static string GetTempFilePathWithExtension(string extension)
         {
-            string hostString = string.IsNullOrEmpty(username) ? hostname : $"{username}@{hostname}";
-            sshProc = new Process($"ssh -o StrictHostKeyChecking=no -A {hostString}", PseudoConsole.PseudoConsoleThreadAttribute, pseudoCons.Handle);
+            var path = Path.GetTempPath();
+            var fileName = Path.ChangeExtension(Guid.NewGuid().ToString(), extension);
+            return Path.Combine(path, fileName);
+        }
+
+        public void Connect(string hostname, string username, string key)
+        {
+            string hostArg = string.IsNullOrEmpty(username) ? hostname : $"{username}@{hostname}";
+            
+            string keyParam = "";
+            if (!String.IsNullOrEmpty(key))
+            {
+                string tempKeyFilePath = GetTempFilePathWithExtension(".pem");
+                File.WriteAllText(tempKeyFilePath, key);
+                keyParam = $"-i \"{tempKeyFilePath}\"";
+            }
+
+            sshProc = new Process($"ssh -o StrictHostKeyChecking=no -A {keyParam} {hostArg}", PseudoConsole.PseudoConsoleThreadAttribute, pseudoCons.Handle);
+            OwningForm.PostWebMessage(new { tabId = TabId, type = "TAB_LOG", content = "Session has connected", @event = "connect" });
             sshProc.Exited += SshProc_Exited;
         }
 
         private void SshProc_Exited()
         {
             OwningForm.PostWebMessage(new { tabId = TabId, type = "TAB_LOG", content = "Session has disconnected", @event = "disconnect" });
-            Disconnect?.Invoke();
+            OnDisconnect?.Invoke();
         }
 
         public void Input(string text)
@@ -92,6 +109,11 @@ namespace Superdp
         }
 
         public void Resize(int rows, int cols) => pseudoCons?.Resize(rows, cols);
+
+        public void Disconnect()
+        {
+            sshProc?.Terminate();
+        }
 
         unsafe private void CopyPipeToOutput()
         {

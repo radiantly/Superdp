@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   position: relative;
-  height: 35px;
+  height: var(--tab-height);
   min-width: 0;
 }
 </style>

@@ -1,48 +1,54 @@
 <script setup>
-import { computed, reactive, ref } from "vue";
 import { Tab } from "../../classes/Tab.js";
 import { UseTimeAgo } from "@vueuse/components";
 import Terminal from "../Terminal.vue";
+import ResizableSideBar from "../side/ResizableSideBar.vue";
+import ClientEditSide from "../side/ClientEditSide.vue";
+import { provide, ref } from "vue";
 const props = defineProps({
   tab: {
     type: Tab,
     required: true,
   },
 });
-const client = computed(() => props.tab.client);
 
-const actionBtnText = computed(() =>
-  props.tab.props.state === "connecting" ? "Connecting" : "Connect"
-);
-
-// state
-
-// For RDP
-// "connected" Hide everything
-// else Show everything if not
-
-// For SSH
-// "attached" Hide everything
-// "connected" Hide everything
-// else Show sidebar
-// const visibleSideBar
+const sidebarWidth = ref(300);
+provide("tab", props.tab);
 </script>
 <template>
   <div class="page-stack">
     <Terminal
       class="terminal"
-      v-if="tab.props.buffer"
+      :class="{
+        invisible: props.tab.props.type !== 'ssh' || tab.props.buffer === null,
+      }"
+      :tab="tab"
       :buffer="tab.props.buffer"
       @resize="(rows, cols) => props.tab.setTerminalSize(rows, cols)"
       @input="(data) => props.tab.sshInput(data)"
+      :style="{
+        transform: `translateX(${
+          props.tab.props.state === 'connected' ? 0 : sidebarWidth
+        }px)`,
+      }"
     />
     <div
       class="page-container"
-      :class="{ visible: tab.props.state !== 'connected' }"
+      :class="{
+        invisible:
+          props.tab.props.type === 'rdp' &&
+          props.tab.props.state === 'connected',
+      }"
     >
+      <ResizableSideBar v-model:width="sidebarWidth">
+        <ClientEditSide :entry="tab.client.entry" />
+      </ResizableSideBar>
       <div class="scrollable">
         <div class="connection-log">
-          <template v-for="({ date, content }, index) of tab.logs" :key="index">
+          <template
+            v-for="({ date, content }, index) of tab.logs.slice().reverse()"
+            :key="index"
+          >
             <UseTimeAgo v-slot="{ timeAgo }" :time="date">
               <div class="reltime" :title="date.toLocaleString()">
                 {{ timeAgo }}
@@ -51,7 +57,6 @@ const actionBtnText = computed(() =>
             <div>{{ content }}</div>
           </template>
         </div>
-        <div class="anchor"></div>
       </div>
     </div>
   </div>
@@ -68,19 +73,18 @@ const actionBtnText = computed(() =>
 }
 .page-container {
   display: flex;
-  flex-direction: column;
   background-color: var(--dark-gray);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.page-container.visible {
-  opacity: 1;
-  pointer-events: auto;
+  min-height: 0;
 }
 
 .terminal {
   z-index: 42;
+  transition: transform 0.2s ease;
+  position: relative;
+}
+
+.invisible {
+  visibility: hidden;
 }
 
 .action-btn {
@@ -102,16 +106,9 @@ const actionBtnText = computed(() =>
   background-color: #222;
 }
 
-/* https://css-tricks.com/books/greatest-css-tricks/pin-scrolling-to-bottom/ */
 .scrollable {
   overflow-y: scroll;
-}
-.scrollable * {
-  overflow-anchor: none;
-}
-.anchor {
-  height: 1px;
-  overflow-anchor: auto;
+  flex-grow: 1;
 }
 .connection-log {
   flex-grow: 1;
@@ -122,10 +119,11 @@ const actionBtnText = computed(() =>
   white-space: pre;
   gap: 5px 20px;
   padding: 10px;
-  color: #ddd;
+  color: var(--light);
+  text-wrap: wrap;
 }
 .reltime {
   text-align: right;
-  color: #aaa;
+  color: var(--lighter-gray);
 }
 </style>

@@ -8,7 +8,6 @@ import {
   dragManager,
   interopQueen,
 } from "./globals";
-import Overlay from "./components/Overlay.vue";
 import { Tab } from "./classes/Tab";
 provideData();
 
@@ -23,6 +22,10 @@ const handleMouseLeave = (e) => {
 
   dragManager.clear();
 };
+
+const handleFocusOut = (e) => {
+  if (!e.relatedTarget) setTimeout(() => e.target?.focus(), 0);
+};
 </script>
 
 <template>
@@ -30,10 +33,10 @@ const handleMouseLeave = (e) => {
     class="everything"
     @mouseup.passive="handleMouseUp"
     @mouseleave.passive="handleMouseLeave"
+    @focusout="handleFocusOut"
   >
     <WorkArea :tab-manager="clientManager.session.children[0]" />
   </div>
-  <Overlay />
   <ContextMenu :menu="contextMenu" />
 </template>
 

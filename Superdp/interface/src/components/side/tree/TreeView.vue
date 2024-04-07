@@ -37,7 +37,6 @@ const lineIndent = `${17 + props.depth * 20 - 14}px`;
 .entries {
   display: flex;
   flex-direction: column;
-  color: #ccc;
   position: relative;
 }
 
@@ -49,7 +48,7 @@ const lineIndent = `${17 + props.depth * 20 - 14}px`;
   left: v-bind(lineIndent);
   height: 100%;
   width: 1px;
-  background-color: #333;
+  background-color: var(--light-gray);
 }
 
 .entries.root::after {

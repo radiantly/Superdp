@@ -24,6 +24,7 @@ defineProps({
   display: flex;
   flex-direction: column;
   gap: 8px;
+  align-self: flex-start;
 }
 .label-row {
   display: flex;
@@ -34,12 +35,12 @@ defineProps({
 }
 .label-text {
   text-transform: uppercase;
-  color: #b3b3b3;
+  color: var(--light);
   font-weight: 700;
   user-select: none;
 }
 .hint-text {
-  color: #aaa;
+  color: var(--lightest-gray);
   overflow: hidden;
   text-overflow: ellipsis;
 }

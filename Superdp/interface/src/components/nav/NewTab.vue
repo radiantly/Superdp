@@ -1,6 +1,9 @@
 <script setup>
-import IconPlus from "../icons/IconPlus.vue";
+import { VscAdd } from "react-icons/vsc";
+import { applyPureReactInVue } from "veaury";
+
 import NavBarItem from "./NavBarItem.vue";
+const VscAddVue = applyPureReactInVue(VscAdd);
 const props = defineProps({
   active: Boolean,
 });
@@ -8,21 +11,19 @@ const props = defineProps({
 
 <template>
   <NavBarItem class="new-tab" :class="{ active: props.active }">
-    <IconPlus />
+    <VscAddVue className="react-icon" />
   </NavBarItem>
 </template>
 
 <style scoped>
 .new-tab {
-  --icon-fill: #bbb;
+  --icon-fill: var(--light);
 }
 .new-tab:hover {
-  --icon-fill: #fff;
-  background-color: var(--gray);
+  --icon-fill: var(--lightest);
+  background-color: var(--da-gray);
 }
 svg {
-  width: 13px;
-  height: 13px;
   fill: var(--icon-fill);
   margin: 0 10px;
 }

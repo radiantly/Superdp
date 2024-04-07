@@ -5,11 +5,11 @@ namespace Superdp
 {
     class RDPManager : IConnectionManager
     {
-        readonly private static Dictionary<string, RDPForm> rdpForms = new();
+        readonly private static Dictionary<string, RDPForm> tabForms = new();
 
         private readonly HeroForm form;
 
-        public IEnumerable<RDPForm> Forms { get => rdpForms.Values.Where(entry => entry.OwningForm == form); }
+        public IEnumerable<RDPForm> Forms { get => tabForms.Values.Where(entry => entry.OwningForm == form); }
 
         internal RDPManager(HeroForm form)
         {
@@ -19,29 +19,30 @@ namespace Superdp
 
         private void HeroForm_FormClosing(object? sender, FormClosingEventArgs e)
         {
-            rdpForms
+            tabForms
                 .Where(entry => entry.Value.OwningForm == form)
                 .Select(entry => entry.Key)
                 .ToList()
-                .ForEach(client_id => rdpForms.Remove(client_id));
+                .ForEach(tab_id => tabForms.Remove(tab_id));
         }
 
         public void Connect(dynamic options)
         {
             RDPConnectionParams want = new(options.client.host, options.client.username, options.client.password);
 
-            // check if a form for the given client id already exists.
-            if (rdpForms.ContainsKey(options.clientId))
+            // check if an rdp form for the current tab already exists
+            if (tabForms.ContainsKey(options.tabId))
             {
-                RDPForm existing = rdpForms[options.clientId];
+                RDPForm existing = tabForms[options.tabId];
                 if (existing.ConnectionParams == want)
                 {
                     Update(options);
+                    existing.SetOwningForm(form, options.tabId);
                     existing.Connect();
                     return;
                 }
-
-                Disconnect(options);
+                
+                existing.Disconnect();
             }
 
             var rdpForm = new RDPForm(form)
@@ -53,10 +54,11 @@ namespace Superdp
                 ShouldBeVisible = options.visible,
                 ConnectionParams = want
             };
-            rdpForms.Add(options.clientId, rdpForm);
+            tabForms.Add(options.tabId, rdpForm);
             rdpForm.OnDisconnect += () =>
             {
-                rdpForms.Remove(options.clientId);
+                if (tabForms.ContainsKey(options.tabId) && tabForms[options.tabId] == rdpForm)
+                    tabForms.Remove(options.tabId);
                 rdpForm.OwningForm.Controls.Remove(rdpForm);
                 rdpForm.OwningForm.EnsureWebViewPositioning();
             };
@@ -65,13 +67,13 @@ namespace Superdp
 
         public void Disconnect(dynamic options)
         {
-            rdpForms.TryGetValue((string)options.clientId, out var rdpForm);
+            tabForms.TryGetValue((string)options.tabId, out var rdpForm);
             rdpForm?.Disconnect();
         }
 
         public void Update(dynamic options)
         {
-            if (!rdpForms.TryGetValue((string)options.clientId, out var rdpForm))
+            if (!tabForms.TryGetValue((string)options.tabId, out var rdpForm))
                 return;
             
             rdpForm.Location = new Point(options.x, options.y);
@@ -81,7 +83,7 @@ namespace Superdp
 
         public void Transfer(dynamic options)
         {
-            if (!rdpForms.TryGetValue((string)options.clientId, out var rdpForm))
+            if (!tabForms.TryGetValue((string)options.tabId, out var rdpForm))
                 return;
 
             rdpForm.SetOwningForm(form, options.tabId);

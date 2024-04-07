@@ -1,4 +1,4 @@
-import { shallowReactive, computed, nextTick, reactive } from "vue";
+import { shallowReactive, computed, reactive } from "vue";
 import { watchIgnorable } from "@vueuse/core";
 import { v4 as uuidv4 } from "uuid";
 import { Tab } from "./Tab";
@@ -14,16 +14,33 @@ export class Client {
     this.tabs = new Map();
     this.props = shallowReactive({});
 
+    this.invalidFields = reactive({
+      host: computed(
+        () =>
+          this.props.host.length === 0 || /[^a-z0-9.-]/i.test(this.props.host)
+      ),
+      username: computed(() => this.props.username.includes(" ")),
+      type: computed(() => this.props.type === null),
+    });
+
+    this.valid = computed(
+      () => Object.values(this.invalidFields).filter(Boolean).length === 0
+    );
+
     // feedback on the entered properties
     this.hints = reactive({
-      host: computed(() =>
-        /[^a-z0-9.-]/i.test(this.props.host) ? "Invalid hostname" : null
-      ),
-      username: computed(() =>
-        this.props.type === "rdp" && this.props.username.includes("\\")
-          ? "Domain: " + this.props.username.split("\\")[0]
-          : null
-      ),
+      host: computed(() => {
+        if (this.props.host.length === 0) return "(required)";
+        if (this.invalidFields.host) return "Invalid hostname";
+        return null;
+      }),
+      username: computed(() => {
+        if (this.invalidFields.username) return "No spaces allowed";
+        const split = this.props.username.split("\\");
+        if (split.length >= 2) return `Domain: ${split[0]}`;
+        return null;
+      }),
+      type: computed(() => (this.invalidFields.type ? "Please select" : null)),
     });
 
     this.watcher = watchIgnorable(this.props, () => this.#manager.save(this));
@@ -40,11 +57,12 @@ export class Client {
   }
 
   #populateProps({
-    type = "rdp",
+    type = null,
     host = "",
     name = "",
     username = "",
     password = "",
+    key = "",
   } = {}) {
     this.watcher.ignoreUpdates(() => {
       this.props.type = type;
@@ -52,27 +70,15 @@ export class Client {
       this.props.name = name;
       this.props.username = username;
       this.props.password = password;
+      this.props.key = key;
     });
   }
 
   // Creates tab if it doesn't exist. Otherwise switches to tab
   async createTab(tabManager) {
-    // If the client is an rdp client, then we restrict to a single tab
-    // and switch to the existing rdp tab if it exists
-    let tab = null;
-    if (this.props.type === "rdp") {
-      tab = [...this.tabs.values()].find((tab) => tab.props.type === "rdp");
-
-      // If tab is already part of an existing tab manager, we reparent it
-      if (tab?.props.parent) tab.props.parent.remove(tab);
-    }
-
-    if (!tab) tab = new Tab({ client: this });
+    const tab = new Tab({ client: this });
 
     this.addTab(tabManager, tab);
-
-    // So that the dimensions are right before we send a connection request
-    await nextTick();
     tab.connect();
 
     return tab;

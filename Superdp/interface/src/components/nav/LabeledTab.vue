@@ -1,8 +1,11 @@
 <script setup>
+import { VscChromeClose } from "react-icons/vsc";
+import { applyPureReactInVue } from "veaury";
+
 import { Tab } from "../../classes/Tab";
 import { dragManager, interopQueen } from "../../globals";
-import IconCross from "../icons/IconCross.vue";
 import NavBarItem from "./NavBarItem.vue";
+const VscChromeCloseVue = applyPureReactInVue(VscChromeClose);
 const props = defineProps({
   tab: {
     type: Tab,
@@ -35,30 +38,42 @@ const handleMouseLeave = (e) => {
 <template>
   <NavBarItem
     class="labeled-tab"
-    :class="{ active: tab.isActive.value }"
+    :class="{
+      active: tab.isActive.value,
+      connected: tab.props.state === 'connected',
+    }"
     @mousedown.passive="handleMouseDown"
     @mouseleave.passive="handleMouseLeave"
+    draggable="true"
+    @dragstart="(e) => e.dataTransfer.setData('text/plain', 'hiiiiii')"
   >
     <div class="text">{{ tab.client.label.value }}</div>
     <div class="close" @mousedown.stop="$emit('close')">
-      <IconCross />
+      <VscChromeCloseVue className="react-icon" />
     </div>
   </NavBarItem>
 </template>
 
 <style scoped>
 .labeled-tab {
-  --bgcolor: var(--gray);
-  --hover-close-bgcolor: #3b3c3c;
+  --bg-color: var(--dark-gray);
+  --text-color: var(--light);
 
-  color: #bbb;
-  background-color: var(--bgcolor);
+  color: var(--text-color);
+  background-color: var(--bg-color);
+}
+
+.labeled-tab:hover {
+  --bg-color: var(--da-gray);
 }
 
 .labeled-tab.active {
-  color: #ffffff;
-  --bgcolor: var(--dark-gray);
-  --hover-close-bgcolor: #313232;
+  --bg-color: var(--gray);
+  --text-color: var(--lightest);
+}
+
+.labeled-tab.connected {
+  --text-color: var(--green);
 }
 
 .labeled-tab .text {
@@ -70,9 +85,6 @@ const handleMouseLeave = (e) => {
   overflow: hidden;
 }
 
-/* I don't like this much. Can we maybe have a circle connection indicator and
-   then maybe replace it with the close symbol on hover? */
-/* Update: Done. */
 .labeled-tab .close {
   padding: 3px;
   margin: 0 4px;
@@ -83,10 +95,8 @@ const handleMouseLeave = (e) => {
 }
 
 .labeled-tab .close > svg {
-  fill: #bbb;
+  fill: var(--text-color);
   display: block;
-  width: 14px;
-  height: 14px;
 }
 
 .labeled-tab:hover .close,
@@ -95,6 +105,6 @@ const handleMouseLeave = (e) => {
 }
 
 .labeled-tab .close:hover {
-  background-color: var(--hover-close-bgcolor);
+  background-color: color-mix(in srgb, var(--bg-color), var(--light) 10%);
 }
 </style>

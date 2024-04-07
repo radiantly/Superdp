@@ -11,12 +11,8 @@ const props = defineProps({
     required: true,
   },
 });
-
-const client = computed(() => props.entry.client);
 </script>
 <template>
-  <div class="client-col">
-    <SideTitle :label="entry.label" />
-    <ClientEntryEdit v-if="!entry.isDir()" :entry="entry" :full-size="false" />
-  </div>
+  <SideTitle :label="entry.label" />
+  <ClientEntryEdit v-if="!entry.isDir()" :entry="entry" :full-size="false" />
 </template>

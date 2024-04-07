@@ -1,12 +1,13 @@
 <script setup>
-import ResizableSidebar from "../../side/ResizableSidebar.vue";
-
 import { watchEffect, shallowReactive } from "vue";
-import ClientEntryEdit from "./ClientEntryEdit.vue";
-import { ClientEntry } from "../../../classes/ClientEntry";
-import DirEntryEdit from "./DirEntryEdit.vue";
+
 import { clientManager } from "../../../globals";
+import { ClientEntry } from "../../../classes/ClientEntry";
+import ClientEntryEdit from "./ClientEntryEdit.vue";
+import DirEntryEdit from "./DirEntryEdit.vue";
 import Connections from "../../side/Connections.vue";
+import ResizableSideBar from "../../side/ResizableSideBar.vue";
+import DefaultWelcome from "./DefaultWelcome.vue";
 
 // if we don't use a shallowRef here, the assigned entry object is proxied
 // and no longer equal to the original
@@ -23,20 +24,21 @@ watchEffect(() => {
 
 <template>
   <div class="page-container">
-    <ResizableSidebar>
+    <ResizableSideBar>
       <Connections :side-props="sideProps" />
-    </ResizableSidebar>
-    <div style="flex-grow: 1">
-      <DirEntryEdit
-        :entry="sideProps.activeEntry"
-        v-if="sideProps.activeEntry?.isDir()"
-      />
-      <ClientEntryEdit
-        :entry="sideProps.activeEntry"
-        :full-size="true"
-        v-else-if="sideProps.activeEntry instanceof ClientEntry"
-      />
-    </div>
+    </ResizableSideBar>
+    <DirEntryEdit
+      :entry="sideProps.activeEntry"
+      v-if="sideProps.activeEntry?.isDir()"
+      class="editor"
+    />
+    <ClientEntryEdit
+      :entry="sideProps.activeEntry"
+      :full-size="true"
+      v-else-if="sideProps.activeEntry instanceof ClientEntry"
+      class="editor"
+    />
+    <DefaultWelcome v-else class="editor" />
   </div>
 </template>
 
@@ -46,5 +48,8 @@ watchEffect(() => {
   display: flex;
   min-height: 0;
   background-color: var(--dark-gray);
+}
+.editor {
+  flex-grow: 1;
 }
 </style>

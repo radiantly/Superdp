@@ -16,8 +16,6 @@ namespace Superdp
 
         public const int NewInstanceMesssage = WM_APP + 1;
 
-        private HeroForm? heroFormCached = null;
-
         public FormManager()
         {
             Directory.CreateDirectory(dataDir);
@@ -52,17 +50,9 @@ namespace Superdp
             }
         }
 
-        private HeroForm GetHeroForm()
-        {
-            var form = new HeroForm() { Manager = this };
-            form.Show();
-            return form;
-        }
-
         public HeroForm CreateInstance()
         {
-            var form = heroFormCached ?? GetHeroForm();
-            heroFormCached = GetHeroForm();
+            var form = new HeroForm() { Manager = this };
 
             Forms.Add(form);
             form.FormClosed += (sender, e) => 
@@ -72,7 +62,7 @@ namespace Superdp
                     ExitThread();
             };
 
-            form.Hydrate();
+            form.Show();
             return form;
         }
 

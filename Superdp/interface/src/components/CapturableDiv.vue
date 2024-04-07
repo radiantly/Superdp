@@ -33,5 +33,6 @@ const active = ref(false);
   left: 0;
   height: 100vh;
   width: 100vw;
+  z-index: 1337;
 }
 </style>

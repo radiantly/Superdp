@@ -24,13 +24,13 @@ useResizeObserver(workAreaElem, () =>
 </script>
 
 <template>
-  <NavBar />
   <div ref="workAreaElem" class="workArea">
     <template v-for="tab of tabManager.tabs" :key="tab.client.id">
-      <ConnectionPage :class="{ hidden: !tab.isActive.value }" :tab="tab" />
+      <ConnectionPage :class="{ invisible: !tab.isActive.value }" :tab="tab" />
     </template>
-    <NewTabPage :class="{ hidden: tabManager.props.active !== null }" />
+    <NewTabPage :class="{ invisible: tabManager.props.active !== null }" />
   </div>
+  <NavBar />
 </template>
 
 <style scoped>
@@ -49,7 +49,7 @@ useResizeObserver(workAreaElem, () =>
   min-height: 0;
 }
 
-.hidden {
+.invisible {
   visibility: hidden;
 }
 </style>

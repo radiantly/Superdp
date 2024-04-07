@@ -1,19 +1,11 @@
 <script setup>
-import IconPencil from "../../icons/IconPencil.vue";
-
-defineProps(["modelValue", "placeholder"]);
-defineEmits(["update:modelValue"]);
+defineProps(["placeholder"]);
+const model = defineModel();
 </script>
 
 <template>
   <label class="name-group">
-    <input
-      class="name-input"
-      :placeholder="placeholder"
-      :value="modelValue"
-      @input="$emit('update:modelValue', $event.target.value)"
-    />
-    <IconPencil />
+    <input class="name-input" :placeholder="placeholder" v-model="model" />
   </label>
 </template>
 
@@ -31,24 +23,26 @@ defineEmits(["update:modelValue"]);
   border: none;
   outline: none;
   min-width: 0;
-  font-family: var(--ui-font);
   width: 0;
   font-size: 40px;
   font-weight: 300;
   flex-grow: 1;
   background-color: transparent;
-  color: #eee;
   padding: 0;
+  position: relative;
 }
-
-.name-input:not(:hover) + svg {
-  opacity: 0;
+.name-group::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 14px);
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
 }
-.name-group > svg {
-  margin-left: 5px;
-  width: 22px;
-  height: 22px;
-  align-self: center;
-  fill: #eee;
+.name-group:focus-within::before,
+.name-group:hover::before {
+  background-color: var(--da-gray);
 }
 </style>

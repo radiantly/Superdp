@@ -4,22 +4,12 @@ import LabeledTab from "./LabeledTab.vue";
 import NewTab from "./NewTab.vue";
 import { inject, ref } from "vue";
 import { TabManager } from "../../classes/TabManager.js";
-import {
-  overlayVisible,
-  interopQueen,
-  contextMenu,
-  windowIsMaximized,
-} from "../../globals";
-import NavLogo from "./NavLogo.vue";
+import { interopQueen, contextMenu, windowIsMaximized } from "../../globals";
 import { useResizeObserver } from "@vueuse/core";
 import { VscChromeRestore, VscChromeMinimize } from "react-icons/vsc";
 import { applyPureReactInVue } from "veaury";
 /** @type {TabManager} */
 const tabManager = inject(tabManagerKey);
-
-const handleMouseDown = (e) => {
-  if (e.button === 0) interopQueen.MouseDownWindowDrag();
-};
 
 const handleTabClose = (...tabs) => {
   for (const tab of tabs) {
@@ -36,6 +26,17 @@ const handleContextMenu = (e, tab) => {
       label: "Connect",
       handler: () => tab.connect(),
     });
+
+  if (tab.props.state === "connected")
+    menuItems.push({
+      label: "Disconnect",
+      handler: () => tab.disconnect(),
+    });
+
+  menuItems.push({
+    label: tab.props.state,
+    disabled: true,
+  });
 
   if (tab.props.type === "ssh")
     menuItems.push({
@@ -57,11 +58,6 @@ const handleContextMenu = (e, tab) => {
   contextMenu.show(e, menuItems);
 };
 
-const handleMouseEnter = (e) => {
-  // if (tabManager.props.active === TabManager.NEW_TAB) return;
-  overlayVisible.value = true;
-};
-
 const navElem = ref(null);
 useResizeObserver(navElem, () =>
   tabManager.setNavSize(navElem.value.getBoundingClientRect())
@@ -80,7 +76,6 @@ const VscChromeMinimizeVue = applyPureReactInVue(VscChromeMinimize);
 <template>
   <div class="nav" ref="navElem">
     <div class="tabs">
-      <NavLogo @mouseenter.passive="handleMouseEnter" />
       <LabeledTab
         v-for="tab of tabManager.tabs"
         :key="tab.client.id"
@@ -89,31 +84,38 @@ const VscChromeMinimizeVue = applyPureReactInVue(VscChromeMinimize);
         @contextmenu.prevent="(e) => handleContextMenu(e, tab)"
       />
       <NewTab
-        v-show="tabManager.tabs.length > 0"
+        v-show="tabManager.tabs.length"
         @mousedown.stop="() => tabManager.setActive(TabManager.NEW_TAB)"
       />
     </div>
-    <div class="spacer" @mousedown.passive="handleMouseDown"></div>
+    <div
+      class="spacer"
+      @dragover.prevent=""
+      @drop.prevent="(e) => console.log(e.dataTransfer.getData('text/plain'))"
+    ></div>
     <div
       class="title-bar-btn"
       @click="handleMinimize"
       v-show="windowIsMaximized"
     >
-      <VscChromeMinimizeVue />
+      <VscChromeMinimizeVue className="react-icon" />
     </div>
     <div
       class="title-bar-btn"
       @click="handleRestore"
       v-show="windowIsMaximized"
     >
-      <VscChromeRestoreVue />
+      <VscChromeRestoreVue className="react-icon" />
     </div>
   </div>
 </template>
 <style scoped>
 .nav {
+  --tab-height: 35px;
+
   display: flex;
-  background-color: #222;
+  background-color: var(--dark-gray);
+  min-height: var(--tab-height);
 }
 
 .nav > .tabs {
@@ -130,9 +132,9 @@ const VscChromeMinimizeVue = applyPureReactInVue(VscChromeMinimize);
   align-items: center;
   justify-content: center;
   width: 50px;
-  transition: all 0.1s ease;
+  transition: background-color 0.1s ease;
 }
 .nav > .title-bar-btn:hover {
-  background-color: #444;
+  background-color: var(--da-gray);
 }
 </style>

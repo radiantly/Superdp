@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
+using Microsoft.Win32;
 
 namespace Superdp
 {
@@ -8,7 +9,7 @@ namespace Superdp
     public partial class HeroForm
     {
         public string? Id { get; private set; }
-        public static readonly Color BackgroundColor = Color.FromArgb(30, 30, 30);
+        public static readonly Color BackgroundColor = Color.FromArgb(46, 52, 64);
         private readonly long CreationTime;
         private readonly InteropQueen interopQueen;
         private string? draggedTabId = null;
@@ -24,7 +25,6 @@ namespace Superdp
         private readonly List<string> pendingWebMessages = [];
         private List<Rectangle> NavAreas = [];
         public bool CloseOnTransfer { get; private set; } = false;
-        public bool Hydrated { get; private set; } = false;
         public HeroForm()
         {
             DoubleBuffered = true;
@@ -33,7 +33,7 @@ namespace Superdp
             InitializeComponent();
             webView.Visible = false;
             webView.Size = ClientSize;
-            MaximizedBounds = Screen.FromControl(this).WorkingArea;
+            MaximumSize = Screen.FromControl(this).WorkingArea.Size;
 
             Icon = Properties.Resources.favicon;
             connectionManagers = new() { ["rdp"] = new RDPManager(this), ["ssh"] = new SSHManager(this) };
@@ -44,27 +44,7 @@ namespace Superdp
 
             Move += HeroForm_Move;
             InterfaceReady += HeroForm_InterfaceReady;
-
-            // Invisible by default
-            ShowInTaskbar = false;
-            WindowState = FormWindowState.Minimized;
-            FormBorderStyle = FormBorderStyle.FixedToolWindow;
-            Opacity = 0;
-        }
-
-        public void Hydrate()
-        {
-            Hydrated = true;
-            if (_ready) PerformHydration();
-        }
-        
-        private void PerformHydration()
-        {
-            ShowInTaskbar = true;
-            FormBorderStyle = FormBorderStyle.Sizable;
-            WindowState = FormWindowState.Normal;
-            Opacity = 1;
-        }
+        }      
 
         private void HeroForm_Move(object? sender, EventArgs e)
         {
@@ -172,6 +152,25 @@ namespace Superdp
 
             webView.CoreWebView2.AddHostObjectToScript("interopQueen", interopQueen);
             webView.CoreWebView2.PermissionRequested += CoreWebView2_PermissionRequested;
+
+            // prevent drag and drop of files from opening them in a new window
+            // https://github.com/MicrosoftEdge/WebView2Feedback/issues/278#issuecomment-768227066
+            webView.CoreWebView2.NewWindowRequested += (sender, args) => args.Handled = true;
+
+            SystemEvents.DisplaySettingsChanged += SystemEvents_DisplaySettingsChanged;
+        }
+
+        private void SystemEvents_DisplaySettingsChanged(object? sender, EventArgs e)
+        {
+            // Fix maximized window size if resolution changes
+            if (FormBorderStyle != FormBorderStyle.None) return;
+            flagUpdatingBorderStyle = true;
+            WindowState = FormWindowState.Normal;
+
+            MaximumSize = Screen.FromControl(this).WorkingArea.Size;
+
+            WindowState = FormWindowState.Maximized;
+            flagUpdatingBorderStyle = false;
         }
 
         private void CoreWebView2_PermissionRequested(object? sender, Microsoft.Web.WebView2.Core.CoreWebView2PermissionRequestedEventArgs e)
@@ -189,7 +188,6 @@ namespace Superdp
                 PostWebMessage(message);
             pendingWebMessages.Clear();
             webView.Visible = true;
-            if (Hydrated) PerformHydration();
         }
 
         public void PostWebMessage(object msgObj)

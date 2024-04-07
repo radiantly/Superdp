@@ -149,13 +149,18 @@ export class ClientManager {
    * @returns {Client} the newly created client and associated entry
    */
   createClient({ parentEntry = this.root, clientProps = {} } = {}) {
+    const client = this.createFloatingClient(clientProps);
+    parentEntry.addChild(client.entry);
+    this.save(client);
+    return client;
+  }
+
+  createFloatingClient(clientProps) {
     const client = new Client({
       props: clientProps,
       manager: this,
     });
-    parentEntry.addChild(client.entry);
     this.idToClient.set(client.id, client);
-    this.save(client);
     return client;
   }
 

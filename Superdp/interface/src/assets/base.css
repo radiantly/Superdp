@@ -5,9 +5,22 @@
 }
 
 :root {
-  --dark-gray: #1e1e1e;
-  --gray: #2d2d2d;
-  --light-gray: #313232;
+  --dark-gray: #2e3440;
+  --gray: #3b4252;
+  --light-gray: #434c5e;
+  --lighter-gray: #4c566a;
+  --light: #d8dee9;
+  --lighter: #e5e9f0;
+  --lightest: #eceff4;
+
+  --striking-blue: #5e81ac;
+
+  --red: #bf616a;
+  --green: #a3be8c;
+
+  --da-gray: color-mix(in srgb, var(--gray), var(--dark-gray) 50%);
+  --lightest-gray: color-mix(in srgb, var(--lighter-gray), var(--light) 50%);
+
   --ui-font: "Noto Sans";
   --ui-font-mono: "Fira Code", "Cascadia Code", monospace;
 
@@ -29,12 +42,6 @@ body {
   font-display: block;
   overflow: hidden;
 }
-
-/* Not sure if I want these selection colors everywhere */
-/* ::selection {
-  color: #ddd;
-  background: rgba(255, 255, 255, 0.05);
-} */
 
 #app {
   width: 100%;
@@ -59,4 +66,26 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(240, 240, 240, 0.2);
+}
+
+::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0);
+}
+
+/* react-icons */
+.react-icon {
+  display: flex;
+  font-size: 16px;
+}
+
+/* Input */
+input,
+textarea {
+  font-family: var(--ui-font);
+  color: var(--light);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--lightest-gray);
 }
