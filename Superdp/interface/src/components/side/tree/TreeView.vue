@@ -13,11 +13,9 @@ const props = defineProps({
   },
 });
 
-// 17 is 18 - 1
-// where 18 is the actual indent
-// and 1 is the translate transform for the circle icon
-const indent = `${17 + props.depth * 20}px`;
-const lineIndent = `${17 + props.depth * 20 - 14}px`;
+// these values are just set by hand
+const indent = `${16 + props.depth * 17}px`;
+const lineIndent = `${16 + props.depth * 17 - 10}px`;
 </script>
 
 <template>

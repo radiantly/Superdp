@@ -1,11 +1,8 @@
 <script setup>
-import { VscChromeClose } from "react-icons/vsc";
-import { applyPureReactInVue } from "veaury";
-
 import { Tab } from "../../classes/Tab";
 import { dragManager, interopQueen } from "../../globals";
+import { VscChromeCloseVue } from "../icons";
 import NavBarItem from "./NavBarItem.vue";
-const VscChromeCloseVue = applyPureReactInVue(VscChromeClose);
 const props = defineProps({
   tab: {
     type: Tab,

@@ -21,8 +21,8 @@
   --da-gray: color-mix(in srgb, var(--gray), var(--dark-gray) 50%);
   --lightest-gray: color-mix(in srgb, var(--lighter-gray), var(--light) 50%);
 
-  --ui-font: "Noto Sans";
-  --ui-font-mono: "Fira Code", "Cascadia Code", monospace;
+  --ui-font: "Noto Sans Variable";
+  --ui-font-mono: "Fira Code Variable";
 
   color-scheme: dark;
 }
@@ -37,10 +37,9 @@ body {
   display: flex;
   font-family: var(--ui-font);
   font-size: 13px;
-  /* background-color: var(--dark-gray); */
-  transition: color 0.5s, background-color 0.5s;
   font-display: block;
   overflow: hidden;
+  transition: color 0.5s, background-color 0.5s;
 }
 
 #app {

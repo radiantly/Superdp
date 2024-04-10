@@ -39,6 +39,7 @@ textarea {
   background-color: var(--da-gray);
   padding: 5px 10px;
   transition: background-color 0.2s ease;
+  border-bottom: 2px solid transparent;
 }
 
 ::-webkit-resizer {
@@ -48,6 +49,9 @@ textarea {
 textarea:hover,
 textarea:focus {
   background-color: var(--gray);
+}
+textarea:focus {
+  border-bottom: 2px solid var(--striking-blue);
 }
 .file-line {
   color: var(--lightest-gray);

@@ -4,12 +4,9 @@ import { provide, shallowReactive } from "vue";
 import TreeManager from "./tree/TreeManager.vue";
 import SideTitle from "./SideTitle.vue";
 
-import { VscNewFile, VscNewFolder } from "react-icons/vsc";
-import { applyPureReactInVue } from "veaury";
+import { VscNewFileVue, VscNewFolderVue } from "../icons";
 import { clientManager } from "../../globals";
 import { DirEntry } from "../../classes/DirEntry";
-const VscNewFileVue = applyPureReactInVue(VscNewFile);
-const VscNewFolderVue = applyPureReactInVue(VscNewFolder);
 
 const props = defineProps({
   sideProps: {
@@ -26,6 +23,7 @@ provide("sideProps", props.sideProps);
       @click="
         () => (sideProps.focusedEntry = clientManager.createClient().entry)
       "
+      title="Create a new connection"
     >
       <VscNewFileVue className="react-icon" />
     </div>
@@ -38,6 +36,7 @@ provide("sideProps", props.sideProps);
             parentEntry: clientManager.root,
           }))
       "
+      title="Create directory"
     >
       <VscNewFolderVue className="react-icon" />
     </div>

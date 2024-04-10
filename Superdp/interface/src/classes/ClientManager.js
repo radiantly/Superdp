@@ -7,6 +7,7 @@ import { Tab } from "./Tab";
 import { SessionManager } from "./SessionManager";
 import { broadcast, broadcastMessageLog, postMessageTo } from "../utils";
 import { v4 as uuidv4 } from "uuid";
+import { Entry } from "./Entry";
 
 export class ClientManager {
   #debouncedWriteConfig;
@@ -175,6 +176,16 @@ export class ClientManager {
   save(obj) {
     this.changes.add(obj);
     this.#debouncedWriteConfig();
+  }
+
+  /**
+   * Check if an entry is actually part of the root tree
+   * If it isn't, it could be a deleted or a temp entry
+   * @param {Entry} entry
+   * @returns bool
+   */
+  isSaved(entry) {
+    return this.root == entry.root;
   }
 
   async #writeConfig() {

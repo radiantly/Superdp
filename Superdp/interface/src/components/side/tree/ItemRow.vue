@@ -1,10 +1,9 @@
 <script setup>
 import { inject } from "vue";
-import IconCircle from "../../icons/IconCircle.vue";
-import IconSortDown from "../../icons/IconSortDown.vue";
 import { Entry } from "../../../classes/Entry.js";
 import { DirEntry } from "../../../classes/DirEntry.js";
 import { clientManager, contextMenu, dragManager } from "../../../globals";
+import { VscChevronDownVue, VscCircleFilledVue } from "../../icons";
 
 const props = defineProps({
   entry: {
@@ -17,7 +16,7 @@ const props = defineProps({
   },
 });
 
-const icons = { circle: IconCircle, collapse: IconSortDown };
+const icons = { circle: VscCircleFilledVue, collapse: VscChevronDownVue };
 
 const sideProps = inject("sideProps");
 
@@ -67,50 +66,49 @@ const handleDrop = (e) => {
 };
 
 const handleContextMenu = (e) => {
-  const menuItems = {
-    dir: [
-      {
-        label: "New connection...",
-        handler: () =>
-          (sideProps.focusedEntry = clientManager.createClient({
-            parentEntry: props.entry,
-          }).entry),
-      },
-      {
-        label: "New directory group...",
-        handler: () =>
-          (sideProps.focusedEntry = new DirEntry({
-            manager: clientManager,
-            parentEntry: props.entry,
-          })),
-      },
-      {
-        label: "Delete",
-        handler: () => props.entry.parent.removeChild(props.entry),
-      },
-    ],
-    leaf: [
-      {
-        label: "Connect",
-        disabled: !props.entry.client.valid.value,
-        handler: () =>
-          props.entry.client.createTab(clientManager.session.children[0]),
-      },
-      {
-        label: "Duplicate",
-        handler: () =>
-          (sideProps.focusedEntry = clientManager.createClient({
-            parentEntry: props.entry.parent,
-            clientProps: props.entry.client.props,
-          }).entry),
-      },
-      {
-        label: "Delete",
-        handler: () => props.entry.parent.removeChild(props.entry),
-      },
-    ],
-  };
-  contextMenu.show(e, menuItems[props.entry.type]);
+  const menuItems = props.entry.isDir()
+    ? [
+        {
+          label: "New connection...",
+          handler: () =>
+            (sideProps.focusedEntry = clientManager.createClient({
+              parentEntry: props.entry,
+            }).entry),
+        },
+        {
+          label: "New directory group...",
+          handler: () =>
+            (sideProps.focusedEntry = new DirEntry({
+              manager: clientManager,
+              parentEntry: props.entry,
+            })),
+        },
+        {
+          label: "Delete",
+          handler: () => props.entry.parent.removeChild(props.entry),
+        },
+      ]
+    : [
+        {
+          label: "Connect",
+          disabled: !props.entry.client.valid.value,
+          handler: () =>
+            props.entry.client.createTab(clientManager.session.children[0]),
+        },
+        {
+          label: "Duplicate",
+          handler: () =>
+            (sideProps.focusedEntry = clientManager.createClient({
+              parentEntry: props.entry.parent,
+              clientProps: props.entry.client.props,
+            }).entry),
+        },
+        {
+          label: "Delete",
+          handler: () => props.entry.parent.removeChild(props.entry),
+        },
+      ];
+  contextMenu.show(e, menuItems);
 };
 </script>
 
@@ -133,7 +131,7 @@ const handleContextMenu = (e) => {
   >
     <div :style="{ width: indent }"></div>
     <div class="icon" :class="chosenIcon">
-      <component :is="icons[chosenIcon]" />
+      <component className="react-icon" :is="icons[chosenIcon]" />
     </div>
     <div class="label">
       {{ entry.label }}
@@ -178,30 +176,18 @@ const handleContextMenu = (e) => {
 
 .icon {
   fill: var(--light-gray);
-  width: 13px;
   display: flex;
 }
 
-.icon.collapse {
-  padding-top: 1px;
-}
-
-.icon.collapse > svg {
-  width: 13px;
-  height: 13px;
+.icon {
   transition: transform 0.2s ease;
 }
 
 .icon.circle {
-  padding-left: 1px;
+  color: var(--lighter-gray);
 }
 
-.icon.circle > svg {
-  width: 10px;
-  height: 10px;
-}
-
-.collapsed > .icon.collapse > svg {
+.collapsed > .icon.collapse {
   transform: rotate(-90deg);
 }
 </style>

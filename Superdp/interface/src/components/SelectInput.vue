@@ -1,24 +1,24 @@
 <script setup>
+import { v4 as uuidv4 } from "uuid";
 defineProps({
   options: {
     type: Array,
     required: true,
   },
-  modelValue: {},
 });
+const model = defineModel();
+
+// The input radios need the same name so that the browser knows that it's part
+// of the same radio button group
+const name = uuidv4();
 </script>
 
 <template>
   <div class="select-wrap">
-    <div
-      class="option"
-      v-for="val in options"
-      :class="{ active: val === modelValue }"
-      :key="val"
-      @click="$emit('update:modelValue', val)"
-    >
+    <label v-for="val in options" :key="val">
+      <input type="radio" :name="name" :value="val" v-model="model" />
       {{ val }}
-    </div>
+    </label>
   </div>
 </template>
 
@@ -29,19 +29,37 @@ defineProps({
   align-self: flex-start;
 }
 
-.option {
+label {
   color: var(--lightest-gray);
   padding: 5px 15px;
   border-radius: 1px;
   cursor: pointer;
   transition: color 0.2s ease, background-color 0.2s ease;
+  position: relative;
 }
 
-.option:hover {
+label input {
+  position: fixed;
+  opacity: 0;
+  pointer-events: none;
+}
+
+label:hover,
+label:focus-within {
   background-color: var(--gray);
 }
 
-.option.active {
+label:focus-within::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--striking-blue);
+}
+
+label:has(input:checked) {
   color: var(--lightest);
   background-color: var(--striking-blue);
 }

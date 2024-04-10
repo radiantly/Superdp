@@ -64,16 +64,22 @@ export class DirEntry extends Entry {
   }
 
   addChild(entry) {
-    if (this.#childSet.has(entry)) return;
     console.assert(entry.parent === null);
     entry.parent = this;
+
+    console.assert(!this.#childSet.has(entry));
     this.#childSet.add(entry);
+
     this.#childSetChange.value++;
   }
 
   removeChild(entry) {
+    console.assert(this.#childSet.has(entry));
     this.#childSet.delete(entry);
+
+    console.assert(entry.parent === this);
     entry.parent = null;
+
     this.#childSetChange.value++;
   }
 

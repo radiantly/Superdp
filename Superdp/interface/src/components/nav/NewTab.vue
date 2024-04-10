@@ -1,9 +1,7 @@
 <script setup>
-import { VscAdd } from "react-icons/vsc";
-import { applyPureReactInVue } from "veaury";
+import { VscAddVue } from "../icons";
 
 import NavBarItem from "./NavBarItem.vue";
-const VscAddVue = applyPureReactInVue(VscAdd);
 const props = defineProps({
   active: Boolean,
 });

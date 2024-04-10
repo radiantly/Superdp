@@ -9,6 +9,7 @@ const tabManager = inject(tabManagerKey);
 const quickHost = ref("");
 const handleKeydown = (e) => {
   if (e.key === "Enter") {
+    quickHost.value = quickHost.value.trim();
     const [username, host] = quickHost.value.includes("@")
       ? quickHost.value.split("@", 2)
       : ["", quickHost.value];

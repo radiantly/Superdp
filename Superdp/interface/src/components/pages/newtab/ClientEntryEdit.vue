@@ -114,14 +114,6 @@ form.full-size {
   padding: 35px 50px;
 }
 
-form input {
-  border: none;
-  outline: none;
-  min-width: 0;
-  font-family: var(--ui-font);
-  width: 0;
-}
-
 :deep(.input-width) {
   min-width: min(100%, 275px);
 }

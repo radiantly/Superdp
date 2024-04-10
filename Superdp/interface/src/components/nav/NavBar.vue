@@ -6,8 +6,7 @@ import { inject, ref } from "vue";
 import { TabManager } from "../../classes/TabManager.js";
 import { interopQueen, contextMenu, windowIsMaximized } from "../../globals";
 import { useResizeObserver } from "@vueuse/core";
-import { VscChromeRestore, VscChromeMinimize } from "react-icons/vsc";
-import { applyPureReactInVue } from "veaury";
+import { VscChromeRestoreVue, VscChromeMinimizeVue } from "../icons";
 /** @type {TabManager} */
 const tabManager = inject(tabManagerKey);
 
@@ -69,8 +68,6 @@ const handleMinimize = () => {
 const handleRestore = () => {
   interopQueen.Restore();
 };
-const VscChromeRestoreVue = applyPureReactInVue(VscChromeRestore);
-const VscChromeMinimizeVue = applyPureReactInVue(VscChromeMinimize);
 </script>
 
 <template>

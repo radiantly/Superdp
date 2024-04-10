@@ -48,6 +48,7 @@ onMounted(() => {
   fitAddon.fit();
 
   terminal.onData((data) => emit("input", data));
+  terminal.onBinary((data) => emit("input", data));
   terminal.attachCustomKeyEventHandler((arg) => {
     if (arg.ctrlKey && arg.code === "KeyC" && arg.type === "keydown") {
       const selection = terminal.getSelection();
