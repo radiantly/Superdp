@@ -8,7 +8,6 @@ using static Superdp.Native;
 
 namespace Superdp
 {
-
     unsafe internal class SshController : IDisposable
     {
         const int writeBufferSize = 10 * 1024 * 1024; // 10 MiB
@@ -72,13 +71,6 @@ namespace Superdp
             OwningForm.webView.CoreWebView2.PostSharedBufferToScript(sharedBuffer, CoreWebView2SharedBufferAccess.ReadOnly, JsonSerializer.Serialize(additionalData));
         }
 
-        private static string GetTempFilePathWithExtension(string extension)
-        {
-            var path = Path.GetTempPath();
-            var fileName = Path.ChangeExtension(Guid.NewGuid().ToString(), extension);
-            return Path.Combine(path, fileName);
-        }
-
         public void Connect(string hostname, string username, string key)
         {
             string hostArg = string.IsNullOrEmpty(username) ? hostname : $"{username}@{hostname}";
@@ -86,12 +78,12 @@ namespace Superdp
             string keyParam = "";
             if (!String.IsNullOrEmpty(key))
             {
-                string tempKeyFilePath = GetTempFilePathWithExtension(".pem");
+                string tempKeyFilePath = Utils.GetTempFilePathWithExtension(".pem");
                 File.WriteAllText(tempKeyFilePath, key);
                 keyParam = $"-i \"{tempKeyFilePath}\"";
             }
 
-            sshProc = new Process($"ssh -o StrictHostKeyChecking=no -A {keyParam} {hostArg}", PseudoConsole.PseudoConsoleThreadAttribute, pseudoCons.Handle);
+            sshProc = new Process($"ssh -o StrictHostKeyChecking=no {keyParam} {hostArg}", PseudoConsole.PseudoConsoleThreadAttribute, pseudoCons.Handle);
             OwningForm.PostWebMessage(new { tabId = TabId, type = "TAB_LOG", content = "Session has connected", @event = "connect" });
             sshProc.Exited += SshProc_Exited;
         }
@@ -129,6 +121,7 @@ namespace Superdp
                 if (*at == writeBufferSize) *at = 0;
 
                 var bytesWritten = pseudoConsoleOutput.Read(bufferSpan[*at..writeBufferSize]);
+                if (bytesWritten == 0) break;
                 *at += bytesWritten;
             }
         }

@@ -1,6 +1,6 @@
 <script setup>
 import { inject, ref } from "vue";
-import { clientManager } from "../../../globals";
+import { clientManager, interopQueen } from "../../../globals";
 import { Tab } from "../../../classes/Tab";
 import { tabManagerKey } from "../../../keys";
 
@@ -16,6 +16,11 @@ const handleKeydown = (e) => {
     const client = clientManager.createFloatingClient({
       username,
       host,
+    });
+    interopQueen.CheckOpenPorts(host).then((port) => {
+      if (!port) return;
+      if (client.props.type !== null) return;
+      client.props.type = port === 22 ? "ssh" : "rdp";
     });
     const tab = new Tab({ client });
     client.addTab(tabManager, tab);

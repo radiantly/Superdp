@@ -1,6 +1,6 @@
 <script setup>
+import { ref } from "vue";
 import { Tab } from "../../classes/Tab";
-import { dragManager, interopQueen } from "../../globals";
 import { VscChromeCloseVue } from "../icons";
 import NavBarItem from "./NavBarItem.vue";
 const props = defineProps({
@@ -13,22 +13,34 @@ const props = defineProps({
 defineEmits(["close"]);
 
 const tabManager = props.tab.props.parent;
+const dropTarget = ref(false);
 
 const handleMouseDown = (e) => {
   if (e.button !== 0) return; // ignore if not primary mouse button
   tabManager.setActive(props.tab);
-
-  // If this is the only tab, then drag entire window
-  if (tabManager.tabs.length === 1)
-    interopQueen.MouseDownWindowDragWithTab(props.tab.id);
 };
 
-const handleMouseLeave = (e) => {
-  // Start drag
-  if (dragManager.props.isDragging) return;
-  dragManager.start(e, (dragProps) => {
-    dragProps.tab = props.tab;
-  });
+const handleDragStart = (e) => {
+  e.dataTransfer.setData("superdp/tab", props.tab.id);
+  console.log(props.tab.id);
+};
+const handleDragOver = (e) => {
+  if (e.dataTransfer.types.includes("superdp/tab")) e.preventDefault();
+};
+const handleDrop = (e) => {
+  e.preventDefault();
+  const tabId = e.dataTransfer.getData("superdp/tab");
+  if (tabId === props.tab.id) return;
+  if (tabId) {
+    // check if same tab manager
+    const tabIdx = tabManager.tabs.findIndex((tab) => tab.id === tabId);
+    if (tabIdx === -1) return;
+    const tab = tabManager.tabs.splice(tabIdx, 1)[0];
+    const thisTabIdx = tabManager.tabs.findIndex(
+      (tab) => tab.id === props.tab.id
+    );
+    tabManager.tabs.splice(thisTabIdx, 0, tab);
+  }
 };
 </script>
 
@@ -38,11 +50,13 @@ const handleMouseLeave = (e) => {
     :class="{
       active: tab.isActive.value,
       connected: tab.props.state === 'connected',
+      drop: dropTarget,
     }"
     @mousedown.passive="handleMouseDown"
-    @mouseleave.passive="handleMouseLeave"
     draggable="true"
-    @dragstart="(e) => e.dataTransfer.setData('text/plain', 'hiiiiii')"
+    @dragstart="handleDragStart"
+    @dragover="handleDragOver"
+    @drop="handleDrop"
   >
     <div class="text">{{ tab.client.label.value }}</div>
     <div class="close" @mousedown.stop="$emit('close')">

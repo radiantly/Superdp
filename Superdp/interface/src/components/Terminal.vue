@@ -1,9 +1,9 @@
 <script setup>
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, watch, computed } from "vue";
 import { Tab } from "../classes/Tab";
-import { useRafFn, useResizeObserver } from "@vueuse/core";
+import { useResizeObserver } from "@vueuse/core";
 
 const props = defineProps({
   tab: {
@@ -25,6 +25,47 @@ let fitAddon;
 let readTill = 0;
 
 const focusTerminal = () => terminal?.focus();
+
+// Password logic for ssh
+// TODO: Move this out of here/do some refactoring
+const password = computed(() => props.tab.client.props.password);
+let canEnterPassword = false;
+watch(
+  () => props.tab.props.state,
+  () => (canEnterPassword = !!password)
+);
+const checkForPasswordPrompt = (array) => {
+  const prompt = new TextDecoder().decode(array);
+  if (prompt.endsWith(" password: ")) {
+    canEnterPassword = false;
+    emit("input", props.tab.client.props.password + "\r");
+    return true;
+  }
+  return false;
+};
+
+const checkBuffer = () => {
+  if (props.buffer === null) return;
+  const writtenTill = props.buffer.size[0];
+
+  if (readTill == writtenTill) return;
+  if (readTill == props.buffer.display.length) readTill = 0;
+  const till =
+    readTill < writtenTill ? writtenTill : props.buffer.display.length;
+
+  const content = props.buffer.display.subarray(readTill, till);
+  readTill = till;
+
+  if (canEnterPassword && checkForPasswordPrompt(content)) return;
+
+  terminal.write(content);
+};
+
+let checkBufferReq;
+const checkBufferLoop = () => {
+  checkBuffer();
+  checkBufferReq = requestAnimationFrame(checkBufferLoop);
+};
 
 onMounted(() => {
   terminal = new Terminal({
@@ -60,24 +101,12 @@ onMounted(() => {
     } else if (arg.ctrlKey && arg.code === "KeyV" && arg.type === "keydown") {
       navigator.clipboard.readText().then((text) => emit("input", text));
     }
+    canEnterPassword = false;
     return true;
   });
 
   props.tab.addEventListener("focus", focusTerminal);
-});
-
-useRafFn(() => {
-  if (props.buffer === null) return;
-  const writtenTill = props.buffer.size[0];
-
-  if (readTill == writtenTill) return;
-  if (readTill == props.buffer.display.length) readTill = 0;
-  const till =
-    readTill < writtenTill ? writtenTill : props.buffer.display.length;
-
-  terminal.write(props.buffer.display.subarray(readTill, till));
-
-  readTill = till;
+  checkBufferLoop();
 });
 
 useResizeObserver(divElem, () => {
@@ -86,6 +115,7 @@ useResizeObserver(divElem, () => {
 });
 
 onBeforeUnmount(() => {
+  cancelAnimationFrame(checkBufferReq);
   props.tab.removeEventListener("focus", focusTerminal);
   terminal.dispose();
 });

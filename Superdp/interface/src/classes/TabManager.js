@@ -1,9 +1,10 @@
 import { shallowRef, shallowReactive, reactive } from "vue";
-import { Tab } from "./Tab";
+import { v4 as uuidv4 } from "uuid";
 
 export class TabManager {
   static NEW_TAB = null;
   constructor() {
+    this.id = uuidv4();
     this.tabs = shallowReactive([]);
     this.activeTab = shallowRef(null);
     this.props = shallowReactive({

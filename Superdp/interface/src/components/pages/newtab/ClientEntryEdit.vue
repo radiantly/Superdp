@@ -60,11 +60,7 @@ const tab = inject("tab", null);
     >
       <TextInput class="input-width" v-model="client.props.username" />
     </LabeledGroup>
-    <LabeledGroup
-      v-show="client.props.type === 'rdp'"
-      class="input-width"
-      label="Password"
-    >
+    <LabeledGroup class="input-width" label="Password">
       <TextInput
         class="input-width"
         v-model="client.props.password"

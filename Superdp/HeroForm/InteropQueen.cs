@@ -119,6 +119,13 @@ namespace Superdp
                 form.webViewInBackground = true;
                 form.EnsureWebViewPositioning();
             }
+
+            async public Task<int> CheckOpenPorts(string host)
+            {
+                var cancellationToken = new CancellationTokenSource(1000).Token;
+
+                return await await Task.WhenAny(Utils.IsPortOpen(host, 22, cancellationToken), Utils.IsPortOpen(host, 3389, cancellationToken));
+            }
         }
     }
 }
