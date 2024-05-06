@@ -1,6 +1,6 @@
 <script setup>
-import { tabManagerKey } from "../keys";
-import { provide, ref } from "vue";
+import { tabManagerKey, sidePropsKey } from "../keys";
+import { provide, ref, shallowReactive } from "vue";
 import NewTabPage from "./pages/newtab/NewTabPage.vue";
 import NavBar from "./nav/NavBar.vue";
 import ConnectionPage from "./pages/ConnectionPage.vue";
@@ -17,6 +17,11 @@ const props = defineProps({
 provide(tabManagerKey, props.tabManager);
 
 const workAreaElem = ref(null);
+
+// if we don't use a shallowRef here, the assigned entry object is proxied
+// and no longer equal to the original
+const newTabSideProps = shallowReactive({});
+provide(sidePropsKey, newTabSideProps);
 
 useResizeObserver(workAreaElem, () =>
   props.tabManager.setWorkAreaSize(workAreaElem.value.getBoundingClientRect())

@@ -1,5 +1,5 @@
 <script setup>
-import { watchEffect, shallowReactive } from "vue";
+import { watchEffect, inject } from "vue";
 
 import { clientManager } from "../../../globals";
 import { ClientEntry } from "../../../classes/ClientEntry";
@@ -8,10 +8,11 @@ import DirEntryEdit from "./DirEntryEdit.vue";
 import Connections from "../../side/Connections.vue";
 import ResizableSideBar from "../../side/ResizableSideBar.vue";
 import DefaultWelcome from "./DefaultWelcome.vue";
+import { sidePropsKey } from "../../../keys";
 
-// if we don't use a shallowRef here, the assigned entry object is proxied
-// and no longer equal to the original
-const sideProps = shallowReactive({});
+const sideProps = inject(sidePropsKey);
+
+// TODO: Refactor this
 watchEffect(() => (sideProps.activeEntry = sideProps.focusedEntry));
 
 // Reset focused entry if the entry is deleted

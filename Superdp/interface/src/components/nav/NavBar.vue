@@ -1,5 +1,5 @@
 <script setup>
-import { tabManagerKey } from "../../keys";
+import { sidePropsKey, tabManagerKey } from "../../keys";
 import LabeledTab from "./LabeledTab.vue";
 import NewTab from "./NewTab.vue";
 import { inject, ref } from "vue";
@@ -68,6 +68,8 @@ const handleMinimize = () => {
 const handleRestore = () => {
   interopQueen.Restore();
 };
+
+const sideProps = inject(sidePropsKey);
 </script>
 
 <template>
@@ -82,7 +84,12 @@ const handleRestore = () => {
       />
       <NewTab
         v-show="tabManager.tabs.length"
-        @mousedown.stop="() => tabManager.setActive(TabManager.NEW_TAB)"
+        @mousedown.stop="
+          () =>
+            tabManager.props.active !== TabManager.NEW_TAB
+              ? tabManager.setActive(TabManager.NEW_TAB)
+              : (sideProps.activeEntry = null)
+        "
       />
     </div>
     <div

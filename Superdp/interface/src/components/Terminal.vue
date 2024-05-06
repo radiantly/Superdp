@@ -1,6 +1,6 @@
 <script setup>
-import { Terminal } from "xterm";
-import { FitAddon } from "xterm-addon-fit";
+import { Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
 import { ref, onMounted, onBeforeUnmount, watch, computed } from "vue";
 import { Tab } from "../classes/Tab";
 import { useResizeObserver } from "@vueuse/core";
@@ -99,7 +99,7 @@ onMounted(() => {
         return false;
       }
     } else if (arg.ctrlKey && arg.code === "KeyV" && arg.type === "keydown") {
-      navigator.clipboard.readText().then((text) => emit("input", text));
+      navigator.clipboard.readText().then((text) => terminal.input(text, true));
     }
     canEnterPassword = false;
     return true;
