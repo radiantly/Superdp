@@ -4,7 +4,7 @@ import { UseTimeAgo } from "@vueuse/components";
 import Terminal from "../Terminal.vue";
 import ResizableSideBar from "../side/ResizableSideBar.vue";
 import ClientEditSide from "../side/ClientEditSide.vue";
-import { provide, ref } from "vue";
+import { computed, provide, ref } from "vue";
 const props = defineProps({
   tab: {
     type: Tab,
@@ -12,26 +12,42 @@ const props = defineProps({
   },
 });
 
+const client = computed(() => props.tab.client);
+
+const setDefaultClientName = (hostname) => {
+  if (client.value.props.name) return;
+  client.value.props.name = hostname;
+};
+
 const sidebarWidth = ref(300);
 provide("tab", props.tab);
 </script>
 <template>
-  <div class="page-stack">
-    <Terminal
-      class="terminal"
+  <div
+    class="page-stack"
+    :style="{
+      '--side-width': `${sidebarWidth}px`,
+    }"
+    :class="{ [tab.props.state]: true, [tab.props.type ?? 'none']: true }"
+  >
+    <div
+      class="term-wrap"
       :class="{
         invisible: props.tab.props.type !== 'ssh' || tab.props.buffer === null,
       }"
-      :tab="tab"
-      :buffer="tab.props.buffer"
-      @resize="(rows, cols) => props.tab.setTerminalSize(rows, cols)"
-      @input="(data) => props.tab.sshInput(data)"
-      :style="{
-        transform: `translateX(${
-          props.tab.props.state === 'connected' ? 0 : sidebarWidth
-        }px)`,
-      }"
-    />
+    >
+      <Terminal
+        class="terminal"
+        :tab="tab"
+        :buffer="tab.props.buffer"
+        @resize="(rows, cols) => props.tab.setTerminalSize(rows, cols)"
+        @input="(data) => props.tab.sshInput(data)"
+        @hostname="setDefaultClientName"
+      />
+      <div class="label-overlay">
+        <div class="text">{{ tab.props.state }}</div>
+      </div>
+    </div>
     <div
       class="page-container"
       :class="{
@@ -45,10 +61,7 @@ provide("tab", props.tab);
       </ResizableSideBar>
       <div class="scrollable">
         <div class="connection-log">
-          <template
-            v-for="({ date, content }, index) of tab.logs.slice().reverse()"
-            :key="index"
-          >
+          <template v-for="({ date, content }, index) of tab.logs" :key="index">
             <UseTimeAgo v-slot="{ timeAgo }" :time="date">
               <div class="reltime" :title="date.toLocaleString()">
                 {{ timeAgo }}
@@ -75,12 +88,6 @@ provide("tab", props.tab);
   display: flex;
   background-color: var(--dark-gray);
   min-height: 0;
-}
-
-.terminal {
-  z-index: 42;
-  transition: transform 0.2s ease;
-  position: relative;
 }
 
 .invisible {
@@ -125,5 +132,48 @@ provide("tab", props.tab);
 .reltime {
   text-align: right;
   color: var(--lighter-gray);
+}
+.terminal {
+  position: relative;
+  z-index: 42;
+}
+.term-wrap {
+  z-index: 42;
+  position: relative;
+  transform: translateX(var(--side-width));
+  transition: transform 0.2s ease;
+
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+}
+.connected .term-wrap {
+  transform: translateX(0);
+}
+.term-wrap .label-overlay {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.75);
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 43;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.term-wrap .label-overlay .text {
+  transform: translateX(calc(0px - var(--side-width) / 2));
+  text-transform: uppercase;
+  opacity: 0.9;
+  font-size: 2em;
+  font-weight: 700;
+}
+
+.connected .term-wrap .label-overlay {
+  opacity: 0;
 }
 </style>

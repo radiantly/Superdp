@@ -15,7 +15,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["resize", "input"]);
+const emit = defineEmits(["resize", "input", "hostname"]);
 
 const divElem = ref(null);
 
@@ -29,19 +29,27 @@ const focusTerminal = () => terminal?.focus();
 // Password logic for ssh
 // TODO: Move this out of here/do some refactoring
 const password = computed(() => props.tab.client.props.password);
-let canEnterPassword = false;
+let sessionInit = true;
+let passwordTried = false;
 watch(
   () => props.tab.props.state,
-  () => (canEnterPassword = !!password)
+  () => {
+    sessionInit = true;
+    passwordTried = !password;
+  }
 );
-const checkForPasswordPrompt = (array) => {
-  const prompt = new TextDecoder().decode(array);
-  if (prompt.endsWith(" password: ")) {
-    canEnterPassword = false;
+const checkForPasswordPrompt = (prompt) => {
+  if (!passwordTried && prompt.endsWith(" password: ")) {
+    passwordTried = true;
     emit("input", props.tab.client.props.password + "\r");
     return true;
   }
   return false;
+};
+
+const parseHostname = (text) => {
+  const match = text.match(/\w+@([a-z0-9-]+):/i);
+  if (match) emit("hostname", match[1]);
 };
 
 const checkBuffer = () => {
@@ -56,7 +64,11 @@ const checkBuffer = () => {
   const content = props.buffer.display.subarray(readTill, till);
   readTill = till;
 
-  if (canEnterPassword && checkForPasswordPrompt(content)) return;
+  if (sessionInit) {
+    const text = new TextDecoder().decode(content);
+    parseHostname(text);
+    if (checkForPasswordPrompt(text)) return;
+  }
 
   terminal.write(content);
 };
@@ -88,8 +100,12 @@ onMounted(() => {
   terminal.open(divElem.value);
   fitAddon.fit();
 
-  terminal.onData((data) => emit("input", data));
-  terminal.onBinary((data) => emit("input", data));
+  terminal.onData(
+    (data) => props.tab.props.state === "connected" && emit("input", data)
+  );
+  terminal.onBinary(
+    (data) => props.tab.props.state === "connected" && emit("input", data)
+  );
   terminal.attachCustomKeyEventHandler((arg) => {
     if (arg.ctrlKey && arg.code === "KeyC" && arg.type === "keydown") {
       const selection = terminal.getSelection();
@@ -101,7 +117,7 @@ onMounted(() => {
     } else if (arg.ctrlKey && arg.code === "KeyV" && arg.type === "keydown") {
       navigator.clipboard.readText().then((text) => terminal.input(text, true));
     }
-    canEnterPassword = false;
+    sessionInit = false;
     return true;
   });
 
