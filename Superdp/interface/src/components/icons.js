@@ -8,6 +8,7 @@ import {
   VscChromeClose,
   VscChromeRestore,
   VscChromeMinimize,
+  VscChromeMaximize,
 } from "react-icons/vsc";
 import { applyPureReactInVue } from "veaury";
 
@@ -20,3 +21,4 @@ export const VscCircleFilledVue = applyPureReactInVue(VscCircleFilled);
 export const VscChromeCloseVue = applyPureReactInVue(VscChromeClose);
 export const VscChromeRestoreVue = applyPureReactInVue(VscChromeRestore);
 export const VscChromeMinimizeVue = applyPureReactInVue(VscChromeMinimize);
+export const VscChromeMaximizeVue = applyPureReactInVue(VscChromeMaximize);

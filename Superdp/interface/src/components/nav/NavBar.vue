@@ -6,7 +6,11 @@ import { inject, ref } from "vue";
 import { TabManager } from "../../classes/TabManager.js";
 import { interopQueen, contextMenu, windowIsMaximized } from "../../globals";
 import { useResizeObserver } from "@vueuse/core";
-import { VscChromeRestoreVue, VscChromeMinimizeVue } from "../icons";
+import {
+  VscChromeRestoreVue,
+  VscChromeMinimizeVue,
+  VscChromeMaximizeVue,
+} from "../icons";
 /** @type {TabManager} */
 const tabManager = inject(tabManagerKey);
 
@@ -62,13 +66,6 @@ useResizeObserver(navElem, () =>
   tabManager.setNavSize(navElem.value.getBoundingClientRect())
 );
 
-const handleMinimize = () => {
-  interopQueen.Minimize();
-};
-const handleRestore = () => {
-  interopQueen.Restore();
-};
-
 const sideProps = inject(sidePropsKey);
 </script>
 
@@ -97,19 +94,18 @@ const sideProps = inject(sidePropsKey);
       @dragover.prevent=""
       @drop.prevent="(e) => console.log(e.dataTransfer.getData('text/plain'))"
     ></div>
-    <div
-      class="title-bar-btn"
-      @click="handleMinimize"
-      v-show="windowIsMaximized"
-    >
+    <div class="title-bar-btn" @click="() => interopQueen.Minimize()">
       <VscChromeMinimizeVue className="react-icon" />
     </div>
     <div
       class="title-bar-btn"
-      @click="handleRestore"
-      v-show="windowIsMaximized"
+      @click="() => interopQueen.Restore()"
+      v-if="windowIsMaximized"
     >
       <VscChromeRestoreVue className="react-icon" />
+    </div>
+    <div class="title-bar-btn" @click="() => interopQueen.Maximize()" v-else>
+      <VscChromeMaximizeVue className="react-icon" />
     </div>
   </div>
 </template>
@@ -130,6 +126,8 @@ const sideProps = inject(sidePropsKey);
 }
 .nav > .spacer {
   flex-grow: 1;
+  /* Not supported in the stable release of webview2 yet */
+  /* --webkit-app-region: drag; */
 }
 .nav > .title-bar-btn {
   display: flex;

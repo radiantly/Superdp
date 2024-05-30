@@ -103,6 +103,11 @@ namespace Superdp
                 form.WindowState = FormWindowState.Minimized;
             }
 
+            public void Maximize()
+            {
+                form.WindowState = FormWindowState.Maximized;
+            }
+
             public void Restore()
             {
                 form.WindowState = FormWindowState.Normal;
