@@ -113,6 +113,11 @@ namespace Superdp
                 form.WindowState = FormWindowState.Normal;
             }
 
+            public void Close()
+            {
+                form.Close();
+            }
+
             public void BringWebViewToFront()
             {
                 form.webViewInBackground = false;

@@ -21,7 +21,7 @@ provide("sideProps", props.sideProps);
     <div
       class="icon"
       @click="
-        () => (sideProps.focusedEntry = clientManager.createClient().entry)
+        () => (sideProps.activeEntry = clientManager.createClient().entry)
       "
       title="Create a new connection"
     >
@@ -31,7 +31,7 @@ provide("sideProps", props.sideProps);
       class="icon"
       @click="
         () =>
-          (sideProps.focusedEntry = new DirEntry({
+          (sideProps.activeEntry = new DirEntry({
             manager: clientManager,
             parentEntry: clientManager.root,
           }))

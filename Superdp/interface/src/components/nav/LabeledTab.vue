@@ -67,20 +67,31 @@ const handleDrop = (e) => {
 
 <style scoped>
 .labeled-tab {
-  --bg-color: var(--dark-gray);
+  --bg-color: var(--darker-gray);
   --text-color: var(--light);
 
   color: var(--text-color);
   background-color: var(--bg-color);
+  position: relative;
 }
 
 .labeled-tab:hover {
-  --bg-color: var(--da-gray);
+  --bg-color: var(--darke-gray);
 }
 
 .labeled-tab.active {
-  --bg-color: var(--gray);
+  --bg-color: var(--dark-gray);
   --text-color: var(--lightest);
+}
+
+.labeled-tab.active::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: var(--bg-color);
 }
 
 .labeled-tab.connected {

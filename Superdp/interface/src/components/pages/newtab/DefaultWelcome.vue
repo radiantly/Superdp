@@ -1,11 +1,22 @@
 <script setup>
-import { inject, ref } from "vue";
-import { clientManager, interopQueen } from "../../../globals";
+import { inject, onMounted, ref, watch, watchEffect } from "vue";
+import {
+  clientManager,
+  interopQueen,
+  windowIsMaximized,
+} from "../../../globals";
 import { Tab } from "../../../classes/Tab";
-import { tabManagerKey } from "../../../keys";
+import { sidePropsKey, tabManagerKey } from "../../../keys";
+import {
+  VscChromeCloseVue,
+  VscChromeMinimizeVue,
+  VscChromeRestoreVue,
+} from "../../icons";
+import { handleMinimize, handleRestore, handleClose } from "../../../utils";
 
 const tabManager = inject(tabManagerKey);
-
+const sideProps = inject(sidePropsKey);
+const quickInputRef = ref(null);
 const quickHost = ref("");
 const handleKeydown = (e) => {
   if (e.key === "Enter") {
@@ -27,11 +38,52 @@ const handleKeydown = (e) => {
     quickHost.value = "";
   }
 };
+
+// TODO: this seems sorta quirky?
+onMounted(() => {
+  quickInputRef.value.focus();
+});
+watchEffect(() => {
+  if (tabManager.props.active === null && sideProps.activeEntry === null)
+    quickInputRef.value?.focus();
+});
 </script>
 
 <template>
   <div class="container">
+    <nav>
+      <div
+        class="spacer"
+        @mousedown="
+          () => {
+            interopQueen.MouseDownWindowDrag();
+          }
+        "
+      ></div>
+      <div
+        class="title-bar-btn"
+        @click="handleMinimize"
+        v-if="windowIsMaximized"
+      >
+        <VscChromeMinimizeVue className="react-icon" />
+      </div>
+      <div
+        class="title-bar-btn"
+        @click="handleRestore"
+        v-if="windowIsMaximized"
+      >
+        <VscChromeRestoreVue className="react-icon" />
+      </div>
+      <div
+        class="title-bar-btn close"
+        @click="handleClose"
+        v-if="windowIsMaximized"
+      >
+        <VscChromeCloseVue className="react-icon" />
+      </div>
+    </nav>
     <input
+      ref="quickInputRef"
       class="quick-input"
       placeholder="root@172.48.1.104"
       @keydown="handleKeydown"
@@ -41,10 +93,30 @@ const handleKeydown = (e) => {
 </template>
 <style scoped>
 .container {
-  padding: 35px 50px;
-
   display: flex;
   flex-direction: column;
+}
+nav {
+  height: 35px;
+
+  display: flex;
+}
+nav .spacer {
+  flex-grow: 1;
+}
+nav .title-bar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 35px;
+  transition: background-color 0.1s ease;
+}
+nav .title-bar-btn:hover {
+  background-color: var(--gray);
+}
+nav .title-bar-btn.close:hover {
+  background-color: red;
 }
 .quick-input {
   font-size: 24px;
@@ -54,6 +126,7 @@ const handleKeydown = (e) => {
   border-radius: 3px;
   padding: 8px 15px;
   outline: none;
+  margin: 0 50px;
 }
 .quick-input::placeholder {
   color: var(--lighter-gray);

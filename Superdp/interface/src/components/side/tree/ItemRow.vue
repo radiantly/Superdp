@@ -22,7 +22,7 @@ const sideProps = inject("sideProps");
 
 const chosenIcon = props.entry.isDir() ? "collapse" : "circle";
 const handleMouseDown = (e) => {
-  sideProps.focusedEntry = props.entry;
+  sideProps.activeEntry = props.entry;
 };
 
 const validDrop = inject("validDrop");
@@ -71,14 +71,14 @@ const handleContextMenu = (e) => {
         {
           label: "New connection...",
           handler: () =>
-            (sideProps.focusedEntry = clientManager.createClient({
+            (sideProps.activeEntry = clientManager.createClient({
               parentEntry: props.entry,
             }).entry),
         },
         {
           label: "New directory group...",
           handler: () =>
-            (sideProps.focusedEntry = new DirEntry({
+            (sideProps.activeEntry = new DirEntry({
               manager: clientManager,
               parentEntry: props.entry,
             })),
@@ -98,7 +98,7 @@ const handleContextMenu = (e) => {
         {
           label: "Duplicate",
           handler: () =>
-            (sideProps.focusedEntry = clientManager.createClient({
+            (sideProps.activeEntry = clientManager.createClient({
               parentEntry: props.entry.parent,
               clientProps: props.entry.client.props,
             }).entry),

@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace Superdp
 {
+    // TODO: Remove this abomination
     internal sealed class DynJson : DynamicObject
     {
         private readonly JsonNode? root;
@@ -34,7 +35,9 @@ namespace Superdp
                     case JsonValueKind.String:
                         return jValue.GetValue<string>();
                     case JsonValueKind.Number:
-                        return jValue.GetValue<int>();
+                        if (jValue.TryGetValue(out int number))
+                            return number;
+                        return (int)(jValue.GetValue<double>() + 0.5);
                     case JsonValueKind.True:
                         return true;
                     case JsonValueKind.False:

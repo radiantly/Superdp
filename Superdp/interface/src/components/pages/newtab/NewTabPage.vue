@@ -12,13 +12,9 @@ import { sidePropsKey } from "../../../keys";
 
 const sideProps = inject(sidePropsKey);
 
-// TODO: Refactor this
-watchEffect(() => (sideProps.activeEntry = sideProps.focusedEntry));
-
 // Reset focused entry if the entry is deleted
 watchEffect(() => {
-  if (!sideProps.activeEntry) return;
-  if (sideProps.activeEntry.root === clientManager.root) return;
+  if (sideProps.activeEntry?.root === clientManager.root) return;
   sideProps.activeEntry = null;
 });
 </script>

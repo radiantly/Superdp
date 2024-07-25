@@ -11,6 +11,7 @@ import {
   VscChromeMinimizeVue,
   VscChromeMaximizeVue,
 } from "../icons";
+import { handleMaximize, handleMinimize, handleRestore } from "../../utils";
 /** @type {TabManager} */
 const tabManager = inject(tabManagerKey);
 
@@ -19,6 +20,20 @@ const handleTabClose = (...tabs) => {
     tabManager.remove(tab);
     tab.disconnect();
   }
+};
+const sideProps = inject(sidePropsKey);
+
+const handleNewTabMouseDown = (e) => {
+  // drag window if there is nothing else to do
+  if (
+    tabManager.props.active === TabManager.NEW_TAB &&
+    sideProps.activeEntry === null
+  ) {
+    interopQueen.MouseDownWindowDrag();
+    return;
+  }
+  tabManager.setActive(TabManager.NEW_TAB);
+  sideProps.activeEntry = null;
 };
 
 const handleContextMenu = (e, tab) => {
@@ -65,46 +80,28 @@ const navElem = ref(null);
 useResizeObserver(navElem, () =>
   tabManager.setNavSize(navElem.value.getBoundingClientRect())
 );
-
-const sideProps = inject(sidePropsKey);
 </script>
 
 <template>
   <div class="nav" ref="navElem">
-    <div class="tabs">
-      <LabeledTab
-        v-for="tab of tabManager.tabs"
-        :key="tab.client.id"
-        :tab="tab"
-        @close="() => handleTabClose(tab)"
-        @contextmenu.prevent="(e) => handleContextMenu(e, tab)"
-      />
-      <NewTab
-        v-show="tabManager.tabs.length"
-        @mousedown.stop="
-          () =>
-            tabManager.props.active !== TabManager.NEW_TAB
-              ? tabManager.setActive(TabManager.NEW_TAB)
-              : (sideProps.activeEntry = null)
-        "
-      />
-    </div>
-    <div
-      class="spacer"
-      @dragover.prevent=""
-      @drop.prevent="(e) => console.log(e.dataTransfer.getData('text/plain'))"
-    ></div>
-    <div class="title-bar-btn" @click="() => interopQueen.Minimize()">
+    <LabeledTab
+      v-for="tab of tabManager.tabs"
+      :key="tab.client.id"
+      :tab="tab"
+      @close="() => handleTabClose(tab)"
+      @contextmenu.prevent="(e) => handleContextMenu(e, tab)"
+    />
+    <NewTab
+      :active="tabManager.props.active === TabManager.NEW_TAB"
+      @mousedown="handleNewTabMouseDown"
+    />
+    <div class="title-bar-btn" @click="handleMinimize">
       <VscChromeMinimizeVue className="react-icon" />
     </div>
-    <div
-      class="title-bar-btn"
-      @click="() => interopQueen.Restore()"
-      v-if="windowIsMaximized"
-    >
+    <div class="title-bar-btn" @click="handleRestore" v-if="windowIsMaximized">
       <VscChromeRestoreVue className="react-icon" />
     </div>
-    <div class="title-bar-btn" @click="() => interopQueen.Maximize()" v-else>
+    <div class="title-bar-btn" @click="handleMaximize" v-else>
       <VscChromeMaximizeVue className="react-icon" />
     </div>
   </div>
@@ -114,29 +111,32 @@ const sideProps = inject(sidePropsKey);
   --tab-height: 35px;
 
   display: flex;
-  background-color: var(--dark-gray);
-  min-height: var(--tab-height);
-}
-
-.nav > .tabs {
-  display: flex;
   flex-wrap: wrap;
   gap: 1px;
   min-width: 0;
+  background-color: var(--gray);
+  min-height: var(--tab-height);
+  padding-top: 1px;
 }
-.nav > .spacer {
+.nav > * {
+  flex-shrink: 0;
+}
+.nav .spacer {
   flex-grow: 1;
+  background-color: var(--darker-gray);
   /* Not supported in the stable release of webview2 yet */
   /* --webkit-app-region: drag; */
 }
-.nav > .title-bar-btn {
+.nav .title-bar-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 50px;
+  height: var(--tab-height);
   transition: background-color 0.1s ease;
+  background-color: var(--darker-gray);
 }
-.nav > .title-bar-btn:hover {
-  background-color: var(--da-gray);
+.nav .title-bar-btn:hover {
+  background-color: var(--darke-gray);
 }
 </style>

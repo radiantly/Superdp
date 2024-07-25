@@ -12,12 +12,12 @@ const handleContextMenu = (e) => {
     {
       label: "New connection...",
       handler: () =>
-        (sideProps.focusedEntry = clientManager.createClient().entry),
+        (sideProps.activeEntry = clientManager.createClient().entry),
     },
     {
       label: "New directory group...",
       handler: () =>
-        (sideProps.focusedEntry = new DirEntry({
+        (sideProps.activeEntry = new DirEntry({
           manager: clientManager,
           parentEntry: clientManager.root,
         })),
@@ -35,7 +35,7 @@ provide("validDrop", validDrag);
     class="tree"
     :class="{ 'drag-active': validDrag }"
     :tree="clientManager.root"
-    @click.self="() => (sideProps.focusedEntry = null)"
+    @click.self="() => (sideProps.activeEntry = null)"
   />
 </template>
 

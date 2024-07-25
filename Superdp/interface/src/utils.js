@@ -1,4 +1,4 @@
-import { broadcastChannel, clientManager } from "./globals";
+import { broadcastChannel, clientManager, interopQueen } from "./globals";
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -47,3 +47,19 @@ export const postMessageTo = (message, to, requestResponse = false) =>
     channel.addEventListener("message", handler);
     broadcast(message, receiverChannel);
   });
+
+export const handleMinimize = () => {
+  interopQueen.Minimize();
+};
+
+export const handleMaximize = () => {
+  interopQueen.Maximize();
+};
+
+export const handleRestore = () => {
+  interopQueen.Restore();
+};
+
+export const handleClose = () => {
+  interopQueen.Close();
+};
