@@ -1,25 +1,34 @@
 <script setup>
 import { ref } from "vue";
 import CapturableDiv from "../CapturableDiv.vue";
+import { useResizeObserver } from "@vueuse/core";
 
 // Handle resizing of sidebar
-const width = defineModel("width", { default: 300 });
-const sidebar = ref(null);
+const actualWidth = defineModel("width", { default: 300 });
+const sidebarRef = ref(null);
+const wantedWidth = ref(actualWidth.value);
 
-let offsetLeft = 0;
-const handleMouseDown = (e) => {
-  offsetLeft = sidebar.value.getBoundingClientRect().left;
+useResizeObserver(sidebarRef, (entries) => {
+  actualWidth.value = entries[0].contentRect.width;
+});
+
+let originalWidth = 0;
+let originalClientX = 0;
+const handleMouseDown = (event) => {
+  originalWidth = actualWidth.value;
+  originalClientX = event.clientX;
 };
 
-const handleMouseMove = (e) => {
-  if (e.buttons !== 1) return;
+const handleMouseMove = (event) => {
+  if (event.buttons !== 1) return;
 
-  width.value = Math.max(1, e.x - offsetLeft);
+  const deltaX = event.clientX - originalClientX;
+  wantedWidth.value = originalWidth + deltaX;
 };
 </script>
 
 <template>
-  <div class="sidebar" ref="sidebar">
+  <div class="sidebar" ref="sidebarRef">
     <div class="sidebar-children">
       <slot></slot>
     </div>
@@ -37,7 +46,7 @@ const handleMouseMove = (e) => {
   align-self: stretch;
   user-select: none;
   min-width: 10vw;
-  width: v-bind("width + 'px'");
+  width: v-bind("wantedWidth + 'px'");
   max-width: 50vw;
   background-color: var(--dark-gray);
 
@@ -54,15 +63,17 @@ const handleMouseMove = (e) => {
 }
 
 .resize-handle {
+  position: relative;
+  flex-shrink: 0;
   width: 4px;
   cursor: ew-resize;
 
-  border-right: 1px solid var(--gray);
-  transition: background-color 0.2s ease, border-right-color 0.2s ease;
+  border-left: 1px solid var(--gray);
+  transition: background-color 0.2s ease, border-left-color 0.2s ease;
 }
 
 .resize-handle:hover {
   background-color: var(--striking-blue);
-  border-right-color: var(--striking-blue);
+  border-left-color: var(--striking-blue);
 }
 </style>
