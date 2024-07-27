@@ -44,7 +44,7 @@ onMounted(() => {
   quickInputRef.value.focus();
 });
 watchEffect(() => {
-  if (tabManager.props.active === null && sideProps.activeEntry === null)
+  if (tabManager.activeTab === null && sideProps.activeEntry === null)
     quickInputRef.value?.focus();
 });
 </script>

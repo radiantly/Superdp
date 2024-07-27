@@ -33,7 +33,9 @@ useResizeObserver(workAreaElem, () =>
     <template v-for="tab of tabManager.tabs" :key="tab.client.id">
       <ConnectionPage :class="{ invisible: !tab.isActive.value }" :tab="tab" />
     </template>
-    <NewTabPage :class="{ invisible: tabManager.props.active !== null }" />
+    <NewTabPage
+      :class="{ invisible: tabManager.activeTab !== TabManager.NEW_TAB }"
+    />
   </div>
   <NavBar />
 </template>

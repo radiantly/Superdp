@@ -1,10 +1,10 @@
 <script setup>
 import { sidePropsKey, tabManagerKey } from "../../keys";
-import LabeledTab from "./LabeledTab.vue";
-import NewTab from "./NewTab.vue";
-import { inject, ref } from "vue";
+import NavLabeledTab from "./NavLabeledTab.vue";
+import NavNewTab from "./NavNewTab.vue";
+import { inject, ref, shallowReactive } from "vue";
 import { TabManager } from "../../classes/TabManager.js";
-import { interopQueen, contextMenu, windowIsMaximized } from "../../globals";
+import { contextMenu, windowIsMaximized } from "../../globals";
 import { useResizeObserver } from "@vueuse/core";
 import {
   VscChromeRestoreVue,
@@ -23,17 +23,9 @@ const handleTabClose = (...tabs) => {
 };
 const sideProps = inject(sidePropsKey);
 
-const handleNewTabMouseDown = (e) => {
-  // drag window if there is nothing else to do
-  if (
-    tabManager.props.active === TabManager.NEW_TAB &&
-    sideProps.activeEntry === null
-  ) {
-    interopQueen.MouseDownWindowDrag();
-    return;
-  }
-  tabManager.setActive(TabManager.NEW_TAB);
-  sideProps.activeEntry = null;
+const handleTabMouseDown = (tab) => {
+  if (tab === TabManager.NEW_TAB) sideProps.activeEntry = null;
+  tabManager.setActive(tab);
 };
 
 const handleContextMenu = (e, tab) => {
@@ -80,29 +72,102 @@ const navElem = ref(null);
 useResizeObserver(navElem, () =>
   tabManager.setNavSize(navElem.value.getBoundingClientRect())
 );
+
+//// Drag
+const currentDragOver = shallowReactive({ index: -1 });
+const resetCurrentDragOver = () => (currentDragOver.index = -1);
+
+const handleDragStart = (e, tab) => {
+  e.dataTransfer.setData("superdp/tab", tab.id);
+  console.log(tab.id);
+};
+
+const handleDragOver = (e, index) => {
+  if (!e.dataTransfer.types.includes("superdp/tab")) return;
+  e.preventDefault();
+  // console.log(e.offsetX, e.currentTarget.clientWidth);
+  if (e.offsetX > e.currentTarget.clientWidth / 2) index += 1;
+  currentDragOver.index = index;
+};
+
+// this counter tracks events triggered from children
+let dragCounter = 0;
+
+const handleDrop = (e) => {
+  e.preventDefault();
+  dragCounter = 0;
+
+  // check if we actually have a drop index
+  if (currentDragOver.index < 0) return;
+  let targetIndex = currentDragOver.index;
+  resetCurrentDragOver();
+
+  const tabId = e.dataTransfer.getData("superdp/tab");
+  if (tabId) {
+    // check if same tab manager
+    const tabIndex = tabManager.tabs.findIndex((tab) => tab.id === tabId);
+    if (tabIndex !== -1) {
+      // remove tab from tabManager
+      const tab = tabManager.tabs.splice(tabIndex, 1)[0];
+
+      // subtract index by 1 if it is after the removed element
+      console.log(targetIndex);
+      targetIndex -= targetIndex > tabIndex;
+      targetIndex = Math.min(tabManager.tabs.length, targetIndex);
+
+      console.log(targetIndex, tabIndex, tab?.id);
+      tabManager.tabs.splice(targetIndex, 0, tab);
+    }
+  }
+};
+
+const handleDragEnter = () => {
+  dragCounter += 1;
+};
+const handleDragLeave = () => {
+  dragCounter -= 1;
+  if (dragCounter === 0) currentDragOver.index = -1;
+};
 </script>
 
 <template>
-  <div class="nav" ref="navElem">
-    <LabeledTab
-      v-for="tab of tabManager.tabs"
-      :key="tab.client.id"
+  <div class="nav" ref="navElem" @drop="handleDrop">
+    <NavLabeledTab
+      v-for="(tab, index) of tabManager.tabs"
+      :key="tab.id"
       :tab="tab"
+      :active="tab.isActive.value"
+      :connected="tab.props.state === 'connected'"
+      :highlightLeft="currentDragOver.index === index"
       @close="() => handleTabClose(tab)"
+      @mousedown.passive="() => handleTabMouseDown(tab)"
       @contextmenu.prevent="(e) => handleContextMenu(e, tab)"
+      draggable="true"
+      @dragstart="(e) => handleDragStart(e, tab)"
+      @dragover="(e) => handleDragOver(e, index)"
+      @dragenter="handleDragEnter"
+      @dragleave="handleDragLeave"
     />
-    <NewTab
-      :active="tabManager.props.active === TabManager.NEW_TAB"
-      @mousedown="handleNewTabMouseDown"
-    />
-    <div class="title-bar-btn" @click="handleMinimize">
-      <VscChromeMinimizeVue className="react-icon" />
-    </div>
-    <div class="title-bar-btn" @click="handleRestore" v-if="windowIsMaximized">
-      <VscChromeRestoreVue className="react-icon" />
-    </div>
-    <div class="title-bar-btn" @click="handleMaximize" v-else>
-      <VscChromeMaximizeVue className="react-icon" />
+    <div class="action-bar">
+      <NavNewTab
+        :active="tabManager.activeTab === TabManager.NEW_TAB"
+        :highlightLeft="currentDragOver.index >= tabManager.tabs.length"
+        @mousedown.passive="() => handleTabMouseDown(TabManager.NEW_TAB)"
+        @dragover="(e) => handleDragOver(e, tabManager.tabs.length)"
+      />
+      <div class="title-bar-btn" @click="handleMinimize">
+        <VscChromeMinimizeVue className="react-icon" />
+      </div>
+      <div
+        class="title-bar-btn"
+        @click="handleRestore"
+        v-if="windowIsMaximized"
+      >
+        <VscChromeRestoreVue className="react-icon" />
+      </div>
+      <div class="title-bar-btn" @click="handleMaximize" v-else>
+        <VscChromeMaximizeVue className="react-icon" />
+      </div>
     </div>
   </div>
 </template>
@@ -110,29 +175,31 @@ useResizeObserver(navElem, () =>
 .nav {
   --tab-height: 35px;
 
+  flex-shrink: 0;
+  min-height: var(--tab-height);
+  min-width: 0;
+
+  background-color: var(--gray);
+
   display: flex;
   flex-wrap: wrap;
   gap: 1px;
-  min-width: 0;
-  background-color: var(--gray);
-  min-height: var(--tab-height);
   padding-top: 1px;
 }
-.nav > * {
-  flex-shrink: 0;
-}
-.nav .spacer {
-  flex-grow: 1;
-  background-color: var(--darker-gray);
-  /* Not supported in the stable release of webview2 yet */
-  /* --webkit-app-region: drag; */
+.nav .action-bar {
+  flex: 42 0 auto;
+
+  display: flex;
+  gap: 1px;
 }
 .nav .title-bar-btn {
+  flex: 0 0 auto;
+  width: 50px;
+  height: var(--tab-height);
+
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 50px;
-  height: var(--tab-height);
   transition: background-color 0.1s ease;
   background-color: var(--darker-gray);
 }

@@ -17,9 +17,11 @@ const props = defineProps({
 <style scoped>
 .new-tab {
   --icon-fill: var(--light);
-  background-color: var(--darker-gray);
+
+  flex: 42 0 auto;
   position: relative;
-  flex-grow: 1;
+
+  background-color: var(--darker-gray);
 }
 .new-tab:hover {
   --icon-fill: var(--lightest);

@@ -9,11 +9,7 @@ export class SessionManager {
     this.children = [new TabManager()];
 
     watchDebounced(
-      computed(() =>
-        this.children.map((tabManager) =>
-          tabManager.props.navSize
-        )
-      ),
+      computed(() => this.children.map((tabManager) => tabManager.navSize)),
       (areas) => interopQueen.UpdateNavAreas(JSON.stringify(areas))
     );
   }

@@ -17,7 +17,7 @@ export class Tab extends EventTarget {
     this.client = client;
     console.assert(this.client instanceof Client);
 
-    this.isActive = computed(() => this.props.parent?.props.active === this);
+    this.isActive = computed(() => this.props.parent?.activeTab === this);
     this.props = shallowReactive({
       type,
       state,
