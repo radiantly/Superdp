@@ -48,6 +48,10 @@ export class TabManager {
     this.#props.navSize = { x, y, width, height };
   }
 
+  get workAreaSize() {
+    return this.#props.workAreaSize;
+  }
+
   setWorkAreaSize({ x, y, width, height }) {
     this.#props.workAreaSize = { x, y, width, height };
   }

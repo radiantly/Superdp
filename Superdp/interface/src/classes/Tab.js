@@ -33,8 +33,8 @@ export class Tab extends EventTarget {
     );
 
     this.dimensions = computed(() => {
-      if (this.props.type === "rdp" && this.props.parent?.props.workAreaSize)
-        return this.props.parent.props.workAreaSize;
+      if (this.props.type === "rdp" && this.props.parent?.workAreaSize)
+        return this.props.parent.workAreaSize;
 
       if (this.props.type === "ssh" && this.props.rows && this.props.cols)
         return { rows: this.props.rows, cols: this.props.cols };
