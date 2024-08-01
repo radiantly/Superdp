@@ -2,6 +2,7 @@ import { useDebounceFn } from "@vueuse/core";
 import { Client } from "./Client";
 import { DirEntry } from "./DirEntry";
 import { broadcast } from "../utils";
+import { interopQueen } from "../globals";
 
 export class ChangeManager {
   #reportChanges;
@@ -44,5 +45,6 @@ export class ChangeManager {
     const message = this.#prepareSerializedMessage();
     this.reset();
     broadcast(message);
+    interopQueen.SaveConfigChanges(JSON.stringify(message.changes));
   }
 }

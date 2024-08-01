@@ -59,8 +59,8 @@ namespace Superdp
                 newForm.interopQueen.MouseDownWindowDragWithTab(tabId);
             }
 
-            public string ReadConf() => form.Manager.Conf;
-            public void WriteConf(string contents) => form.Manager.Conf = contents;
+            public string ReadConfig() => form.Manager.ConfigJson;
+            public void SaveConfigChanges(string jsonChanges) => form.Manager.SaveConfigChanges(jsonChanges);
 
             public void Connect(string jsonString)
             {

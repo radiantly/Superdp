@@ -1,4 +1,3 @@
-import { useDebounceFn } from "@vueuse/core";
 import { ChangeManager } from "./ChangeManager";
 import { Client } from "./Client";
 import { DirEntry } from "./DirEntry";
@@ -10,7 +9,6 @@ import { v4 as uuidv4 } from "uuid";
 import { Entry } from "./Entry";
 
 export class ClientManager {
-  #debouncedWriteConfig;
   constructor(conf) {
     this.id = uuidv4();
     this.changes = new ChangeManager();
@@ -20,14 +18,12 @@ export class ClientManager {
 
     // Populate clients
     this.reconcile(conf);
-    console.debug("ReadConf parsed:", conf);
+    console.debug("ReadConfig:", conf);
 
     if (!this.root) {
       this.root = new DirEntry({ manager: this });
-      this.#writeConfig();
+      this.save(this.root);
     }
-
-    this.#debouncedWriteConfig = useDebounceFn(() => this.#writeConfig(), 5000);
 
     chrome.webview.addEventListener("message", (msg) => {
       console.debug("> wv2message", msg);
@@ -175,7 +171,6 @@ export class ClientManager {
 
   save(obj) {
     this.changes.add(obj);
-    this.#debouncedWriteConfig();
   }
 
   /**
@@ -186,14 +181,5 @@ export class ClientManager {
    */
   isSaved(entry) {
     return this.root == entry.root;
-  }
-
-  async #writeConfig() {
-    const clients = [...this.idToClient.values()].map((client) =>
-      client.serialize()
-    );
-    const dir_entries = this.root.serializeTree();
-    const confStr = JSON.stringify({ clients, dir_entries });
-    await interopQueen.WriteConf(confStr);
   }
 }
