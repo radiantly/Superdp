@@ -6,7 +6,6 @@ import SideTitle from "./SideTitle.vue";
 
 import { VscNewFileVue, VscNewFolderVue } from "../icons";
 import { clientManager } from "../../globals";
-import { DirEntry } from "../../classes/DirEntry";
 
 const props = defineProps({
   sideProps: {
@@ -29,13 +28,7 @@ provide("sideProps", props.sideProps);
     </div>
     <div
       class="icon"
-      @click="
-        () =>
-          (sideProps.activeEntry = new DirEntry({
-            manager: clientManager,
-            parentEntry: clientManager.root,
-          }))
-      "
+      @click="() => (sideProps.activeEntry = clientManager.createDirEntry())"
       title="Create directory"
     >
       <VscNewFolderVue className="react-icon" />

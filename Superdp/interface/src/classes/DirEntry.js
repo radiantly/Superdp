@@ -18,7 +18,7 @@ export class DirEntry extends Entry {
   #childSet;
   #childSetChange;
   isDir = () => true;
-  constructor({ manager, id, props, parentEntry }) {
+  constructor({ manager, id, props }) {
     super();
     this.#manager = manager;
     this.id = id || uuidv4();
@@ -47,9 +47,6 @@ export class DirEntry extends Entry {
       () => this.#manager.save(this)
     );
     this.#populateProps(props);
-
-    this.#manager.dirEntries.set(id, this);
-    parentEntry?.addChild(this);
   }
 
   get label() {

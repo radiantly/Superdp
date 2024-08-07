@@ -16,11 +16,7 @@ const handleContextMenu = (e) => {
     },
     {
       label: "New directory group...",
-      handler: () =>
-        (sideProps.activeEntry = new DirEntry({
-          manager: clientManager,
-          parentEntry: clientManager.root,
-        })),
+      handler: () => (sideProps.activeEntry = clientManager.createDirEntry()),
     },
   ]);
 };

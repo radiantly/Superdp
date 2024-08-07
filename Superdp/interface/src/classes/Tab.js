@@ -143,6 +143,7 @@ export class Tab extends EventTarget {
           this.props.state = "disconnected";
         } else if (event === "connect") {
           this.props.state = "connected";
+          this.client.setLastConnected(Date.now());
           this.dispatchEvent(new Event("focus"));
         }
         this.log(content);

@@ -1,27 +1,38 @@
+import { v4 as uuidv4 } from "uuid";
+import { shallowReactive, shallowReadonly } from "vue";
+
 import { ChangeManager } from "./ChangeManager";
 import { Client } from "./Client";
 import { DirEntry } from "./DirEntry";
-import { broadcastChannel, interopQueen, windowIsMaximized } from "../globals";
+import { broadcastChannel, windowIsMaximized } from "../globals";
 import { Tab } from "./Tab";
 import { SessionManager } from "./SessionManager";
 import { broadcast, broadcastMessageLog, postMessageTo } from "../utils";
-import { v4 as uuidv4 } from "uuid";
 import { Entry } from "./Entry";
 
 export class ClientManager {
+  #id;
+  #changes;
+  #session;
+  #clientMap;
+  #clientMapReadonly;
+  #dirEntries;
   constructor(conf) {
-    this.id = uuidv4();
-    this.changes = new ChangeManager();
-    this.idToClient = new Map();
-    this.dirEntries = new Map();
-    this.session = new SessionManager();
+    this.#id = uuidv4();
+
+    this.#changes = new ChangeManager();
+    this.#session = new SessionManager();
+
+    this.#clientMap = shallowReactive(new Map());
+    this.#clientMapReadonly = shallowReadonly(this.#clientMap);
+    this.#dirEntries = new Map();
 
     // Populate clients
     this.reconcile(conf);
     console.debug("ReadConfig:", conf);
 
     if (!this.root) {
-      this.root = new DirEntry({ manager: this });
+      this.root = this.createDirEntry(null);
       this.save(this.root);
     }
 
@@ -33,7 +44,7 @@ export class ClientManager {
       "message",
       broadcastMessageLog((msg) => this.processBroadcastMessage(msg))
     );
-    new BroadcastChannel(this.id).addEventListener(
+    new BroadcastChannel(this.#id).addEventListener(
       "message",
       broadcastMessageLog((msg) => this.processBroadcastMessage(msg))
     );
@@ -43,10 +54,22 @@ export class ClientManager {
       window.ev = e;
 
       if (e.additionalData?.tabId)
-        return this.session
+        return this.#session
           .getTab(e.additionalData.tabId)
           ?.processSharedBuffer(e);
     });
+  }
+
+  get id() {
+    return this.#id;
+  }
+
+  get session() {
+    return this.#session;
+  }
+
+  get clients() {
+    return this.#clientMapReadonly;
   }
 
   processBroadcastMessage({ data }) {
@@ -56,10 +79,10 @@ export class ClientManager {
 
   processMessage({ data }) {
     if (data.tabId)
-      return this.session.getTab(data.tabId)?.processMessage(data);
+      return this.#session.getTab(data.tabId)?.processMessage(data);
 
     if (data.clientId)
-      return this.idToClient.get(data.clientId)?.processMessage(data);
+      return this.#clientMap.get(data.clientId)?.processMessage(data);
 
     switch (data.type) {
       case "FORMBORDERSTYLE_CHANGE":
@@ -104,7 +127,7 @@ export class ClientManager {
           }) => {
             this.reconcile({ clients: [serializedClient] });
             const client = this.get(serializedClient.id);
-            const tabManager = this.session.children[0];
+            const tabManager = this.#session.children[0];
             const tab = new Tab({ id, client, props, serializedLogs });
             tab.transfer();
             client.addTab(tabManager, tab);
@@ -120,23 +143,23 @@ export class ClientManager {
   reconcile({ clients = [], dir_entries = [] }) {
     // Clients
     for (const { id, props } of clients) {
-      if (this.idToClient.has(id)) this.idToClient.get(id).reconcile({ props });
-      else this.idToClient.set(id, new Client({ id, props, manager: this }));
+      if (this.#clientMap.has(id)) this.#clientMap.get(id).reconcile({ props });
+      else this.#clientMap.set(id, new Client({ id, props, manager: this }));
     }
 
     // Dir Entries
     for (const { id, props, root } of dir_entries) {
-      if (this.dirEntries.has(id)) continue;
-      const entry = new DirEntry({ id, props, manager: this });
+      if (this.#dirEntries.has(id)) continue;
+      const entry = this.createDirEntry(null, { id, props });
       if (root) this.root = entry;
     }
 
     for (const { id, props, children } of dir_entries) {
-      this.dirEntries.get(id).reconcileStep1({ props, children });
+      this.#dirEntries.get(id).reconcileStep1({ props, children });
     }
 
     for (const { id, children } of dir_entries) {
-      this.dirEntries.get(id).reconcileStep2({ children });
+      this.#dirEntries.get(id).reconcileStep2({ children });
     }
   }
 
@@ -157,20 +180,27 @@ export class ClientManager {
       props: clientProps,
       manager: this,
     });
-    this.idToClient.set(client.id, client);
+    this.#clientMap.set(client.id, client);
     return client;
   }
 
+  createDirEntry(parentEntry = this.root, { id, props } = {}) {
+    const dirEntry = new DirEntry({ id, props, manager: this });
+    parentEntry?.addChild(dirEntry);
+    this.#dirEntries.set(dirEntry.id, dirEntry);
+    return dirEntry;
+  }
+
   get(clientId) {
-    return this.idToClient.get(clientId);
+    return this.#clientMap.get(clientId);
   }
 
   getEntry(entryId) {
-    return this.dirEntries.get(entryId) || this.get(entryId)?.entry;
+    return this.#dirEntries.get(entryId) || this.get(entryId)?.entry;
   }
 
   save(obj) {
-    this.changes.add(obj);
+    this.#changes.add(obj);
   }
 
   /**

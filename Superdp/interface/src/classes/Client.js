@@ -63,6 +63,7 @@ export class Client {
     username = "",
     password = "",
     key = "",
+    last_connected = null,
   } = {}) {
     this.watcher.ignoreUpdates(() => {
       this.props.type = type;
@@ -71,8 +72,20 @@ export class Client {
       this.props.username = username;
       this.props.password = password;
       this.props.key = key;
+      this.props.last_connected = last_connected;
     });
   }
+
+  get lastConnected() {
+    return this.props.last_connected;
+  }
+
+  setLastConnected(timestamp) {
+    this.props.last_connected = timestamp;
+  }
+
+  // TODO: Remove these tab functions from the client class.
+  // We want tab related operations only in the Tab or TabManager class
 
   // Creates tab if it doesn't exist. Otherwise switches to tab
   async createTab(tabManager) {
@@ -106,5 +119,9 @@ export class Client {
 
   reconcile({ props }) {
     this.#populateProps(props);
+  }
+
+  static LastConnectedComparator(client1, client2) {
+    return client2.lastConnected - client1.lastConnected;
   }
 }

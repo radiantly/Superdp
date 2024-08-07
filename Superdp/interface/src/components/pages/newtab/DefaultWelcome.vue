@@ -1,5 +1,5 @@
 <script setup>
-import { inject, onMounted, ref, watch, watchEffect } from "vue";
+import { inject, onMounted, ref, watchEffect } from "vue";
 import {
   clientManager,
   interopQueen,
@@ -13,6 +13,7 @@ import {
   VscChromeRestoreVue,
 } from "../../icons";
 import { handleMinimize, handleRestore, handleClose } from "../../../utils";
+import RecentClients from "./RecentClients.vue";
 
 const tabManager = inject(tabManagerKey);
 const sideProps = inject(sidePropsKey);
@@ -89,6 +90,7 @@ watchEffect(() => {
       @keydown="handleKeydown"
       v-model="quickHost"
     />
+    <RecentClients />
   </div>
 </template>
 <style scoped>

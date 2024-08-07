@@ -78,10 +78,7 @@ const handleContextMenu = (e) => {
         {
           label: "New directory group...",
           handler: () =>
-            (sideProps.activeEntry = new DirEntry({
-              manager: clientManager,
-              parentEntry: props.entry,
-            })),
+            (sideProps.activeEntry = clientManager.createDirEntry(props.entry)),
         },
         {
           label: "Delete",
